@@ -3,8 +3,8 @@
 
 namespace {
 	// Where is our shaders located?  -- we will directly find in the Data folder
-	const char* kDenoiseFragShader = "Tutorial12\\bmfrDenoise.ps.hlsl";
-	const char* kAccumNoisyDataShader = "Tutorial12\\preprocess.ps.hlsl";
+	const char* kDenoiseFragShader = "bmfrDenoise.ps.hlsl";
+	const char* kAccumNoisyDataShader = "preprocess.ps.hlsl";
 };
 
 BlockwiseMultiOrderFeatureRegression::BlockwiseMultiOrderFeatureRegression(const std::string& bufferToDenoise)

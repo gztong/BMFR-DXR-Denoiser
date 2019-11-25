@@ -13,7 +13,6 @@
   <ItemGroup>
     <ClCompile Include="..\CommonPasses\LightProbeGBufferPass.cpp" />
     <ClCompile Include="..\CommonPasses\SimpleAccumulationPass.cpp" />
-    <ClCompile Include="..\SharedUtils\FSPass.cpp" />
     <ClCompile Include="..\SharedUtils\FullscreenLaunch.cpp" />
     <ClCompile Include="..\SharedUtils\RayLaunch.cpp" />
     <ClCompile Include="..\SharedUtils\RenderingPipeline.cpp" />
@@ -28,7 +27,6 @@
   <ItemGroup>
     <ClInclude Include="..\CommonPasses\LightProbeGBufferPass.h" />
     <ClInclude Include="..\CommonPasses\SimpleAccumulationPass.h" />
-    <ClInclude Include="..\SharedUtils\FSPass.h" />
     <ClInclude Include="..\SharedUtils\FullscreenLaunch.h" />
     <ClInclude Include="..\SharedUtils\RayLaunch.h" />
     <ClInclude Include="..\SharedUtils\RenderingPipeline.h" />

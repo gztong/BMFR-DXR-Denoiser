@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.18
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tutor12-DiffuseGlobalIllumination", "12-DiffuseGlobalIllumination\12-DiffuseGlobalIllumination.vcxproj", "{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Falcor", "Falcor\Framework\Source\Falcor.vcxproj", "{3B602F0E-3834-4F73-B97D-7DFC91597A98}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FalcorSharedObjects", "Falcor\Framework\FalcorSharedObjects\FalcorSharedObjects.vcxproj", "{2C535635-E4C5-4098-A928-574F0E7CD5F9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CommonPasses", "CommonPasses\CommonPasses.vcxproj", "{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		DebugD3D12|x64 = DebugD3D12|x64
+		DebugD3D12|x86 = DebugD3D12|x86
+		ReleaseD3D12|x64 = ReleaseD3D12|x64
+		ReleaseD3D12|x86 = ReleaseD3D12|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.DebugD3D12|x64.ActiveCfg = Debug|x64
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.DebugD3D12|x64.Build.0 = Debug|x64
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.DebugD3D12|x86.ActiveCfg = Release|x64
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.DebugD3D12|x86.Build.0 = Release|x64
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.ReleaseD3D12|x64.ActiveCfg = Release|x64
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.ReleaseD3D12|x64.Build.0 = Release|x64
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.ReleaseD3D12|x86.ActiveCfg = Release|x64
+		{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}.ReleaseD3D12|x86.Build.0 = Release|x64
+		{3B602F0E-3834-4F73-B97D-7DFC91597A98}.DebugD3D12|x64.ActiveCfg = DebugD3D12|x64
+		{3B602F0E-3834-4F73-B97D-7DFC91597A98}.DebugD3D12|x64.Build.0 = DebugD3D12|x64
+		{3B602F0E-3834-4F73-B97D-7DFC91597A98}.DebugD3D12|x86.ActiveCfg = DebugD3D12|x64
+		{3B602F0E-3834-4F73-B97D-7DFC91597A98}.ReleaseD3D12|x64.ActiveCfg = ReleaseD3D12|x64
+		{3B602F0E-3834-4F73-B97D-7DFC91597A98}.ReleaseD3D12|x64.Build.0 = ReleaseD3D12|x64
+		{3B602F0E-3834-4F73-B97D-7DFC91597A98}.ReleaseD3D12|x86.ActiveCfg = ReleaseD3D12|x64
+		{2C535635-E4C5-4098-A928-574F0E7CD5F9}.DebugD3D12|x64.ActiveCfg = DebugD3D12|x64
+		{2C535635-E4C5-4098-A928-574F0E7CD5F9}.DebugD3D12|x64.Build.0 = DebugD3D12|x64
+		{2C535635-E4C5-4098-A928-574F0E7CD5F9}.DebugD3D12|x86.ActiveCfg = DebugD3D12|x64
+		{2C535635-E4C5-4098-A928-574F0E7CD5F9}.ReleaseD3D12|x64.ActiveCfg = ReleaseD3D12|x64
+		{2C535635-E4C5-4098-A928-574F0E7CD5F9}.ReleaseD3D12|x64.Build.0 = ReleaseD3D12|x64
+		{2C535635-E4C5-4098-A928-574F0E7CD5F9}.ReleaseD3D12|x86.ActiveCfg = ReleaseD3D12|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.DebugD3D12|x64.ActiveCfg = Debug|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.DebugD3D12|x64.Build.0 = Debug|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.DebugD3D12|x86.ActiveCfg = Release|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.DebugD3D12|x86.Build.0 = Release|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.ReleaseD3D12|x64.ActiveCfg = Release|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.ReleaseD3D12|x64.Build.0 = Release|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.ReleaseD3D12|x86.ActiveCfg = Release|x64
+		{CB191D19-550B-431E-BFA6-5EF6E0DE29C9}.ReleaseD3D12|x86.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {86D0FB1F-D318-4079-9530-BDEB9AC9D44F}
+	EndGlobalSection
+EndGlobal

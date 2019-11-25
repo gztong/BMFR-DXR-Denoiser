@@ -18,6 +18,18 @@ This project is complete DXR pipeline that use 1 spp path tracing noisy image an
 4. Post-process the frames’ data by accumulating the current frame’s information in
 5. Apply the computed color to the pixel
 
+
+
+### Build:
+
+Clone
+
+Falcor -> run [update_dependencies.bat](https://github.com/gztong/BMFR-DXR-Denoiser/blob/master/Falcor/update_dependencies.bat) -> Copy **dear_imgui_addons** into **Framework/Externals**
+
+
+
+
+
 ----------------------------------------------------------------------------------------------
 Acknowledgments:
 ----------------------------------------------------------------------------------------------

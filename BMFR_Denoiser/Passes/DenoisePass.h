@@ -40,7 +40,7 @@ protected:
     Scene::SharedPtr              mpScene;
 
 	// BMFR passes
-	FullscreenLaunch::SharedPtr         mpReprojection;
+	FullscreenLaunch::SharedPtr         mpPreprocessShader;
 	FullscreenLaunch::SharedPtr         mpPostShader;
 
 	// Textures expected by BMFR code
@@ -48,12 +48,10 @@ protected:
 		Texture::SharedPtr    curPos;
 		Texture::SharedPtr    curNorm;
 		Texture::SharedPtr    curNoisy;
-		Texture::SharedPtr    curSpp;
 
 		Texture::SharedPtr    prevPos;
 		Texture::SharedPtr    prevNorm;
 		Texture::SharedPtr    prevNoisy;
-		Texture::SharedPtr    prevSpp;
 
 		Texture::SharedPtr    accept_bools;
 		Texture::SharedPtr    prevFramePixel;
@@ -65,9 +63,6 @@ protected:
     bool                          mDoDenoise = true;
 	bool                          mBMFR_preprocess = true;
 	bool                          mBMFR_postprocess = true;
-
-
-
 
 private:
 	bool mNeedFboClear;

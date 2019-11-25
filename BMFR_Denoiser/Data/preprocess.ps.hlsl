@@ -11,9 +11,6 @@ Texture2D<float4> gPrevNorm; //world normal
 RWTexture2D<float4> gCurNoisy; //current output image
 Texture2D<float4> gPrevNoisy;
 
-RWTexture2D<float> gCurSpp; //count of samples over time
-Texture2D<float> gPrevSpp;
-
 RWTexture2D<uint> accept_bools; // is previous sample accepted
 RWTexture2D<float2> out_prev_frame_pixel; // save this for later, avoid calculating again
 
@@ -81,10 +78,6 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
     uint IMAGE_WIDTH = dim.x;
     uint IMAGE_HEIGHT = dim.y; // TODO: Optimize this
 
-	// TODO
- //   const int2 pixel_without_mirror = pixelPos - BLOCK_EDGE_HALF + BLOCK_OFFSETS[frame_number % BLOCK_OFFSETS_COUNT];
- //   const int2 pixel = mirror2(pixel_without_mirror, dim);
-
     const int2 pixel = pixelPos;
 
     float3 world_position = gCurPos[pixelPos].xyz;
@@ -140,7 +133,6 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
         weights[1] = prev_pixel_fract.x * one_minus_prev_pixel_fract.y;
         weights[2] = one_minus_prev_pixel_fract.x * prev_pixel_fract.y;
         weights[3] = prev_pixel_fract.x * prev_pixel_fract.y;
-      // float total_weight = 0.f;
         total_weight = 0.f;
       // Bilinear sampling
         for (int i = 0; i < 4; ++i)
@@ -174,14 +166,15 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
                     {
 						// Pixel passes all tests so store it to accept bools
                         store_accept |= 1 << i;
-                        sample_spp += weights[i] * gPrevSpp[sample_location];
-                        previous_color += weights[i] * gPrevNoisy[sample_location].xyz;
+                        float4 prevData = gPrevNoisy[sample_location];
+                        sample_spp += weights[i] * prevData.w;
+						
+                        previous_color += weights[i] * prevData.xyz;
                         total_weight += weights[i];
                     }
                 }
             }
         }
-
         if (total_weight > 0.f)
         {
             previous_color /= total_weight;
@@ -197,16 +190,14 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
     float new_spp = 1.f;
     if (blend_alpha < 1.f)
     {
-        new_spp = min(255.f, sample_spp);
+        new_spp += sample_spp;
     }
-    gCurSpp[pixelPos] = new_spp;
 
     float3 new_color = blend_alpha * current_color + (1.f - blend_alpha) * previous_color;
 
-    gCurNoisy[pixelPos] = float4(new_color, 1.f);
+    gCurNoisy[pixelPos] = float4(new_color, new_spp);
     accept_bools[pixelPos] = store_accept;
     out_prev_frame_pixel[pixelPos] = prev_frame_pixel_f;
-
 
     return gCurNoisy[pixelPos];
 }

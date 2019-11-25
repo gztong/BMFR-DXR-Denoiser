@@ -65,19 +65,14 @@ void BlockwiseMultiOrderFeatureRegression::resize(uint32_t width, uint32_t heigh
 	mpInternalFbo = ResourceManager::createFbo(width, height, ResourceFormat::RGBA32Float);
 	mpGfxState->setFbo(mpInternalFbo);
 
-	mpCurReprojFbo = ResourceManager::createFbo(width, height, ResourceFormat::RGBA32Float);
-	mpPrevReprojFbo = ResourceManager::createFbo(width, height, ResourceFormat::RGBA32Float);
-
 	mNeedFboClear = true;
 	mAccumCount = 0;
-
 }
 
 
 void BlockwiseMultiOrderFeatureRegression::clearFbos(RenderContext* pCtx)
 {
 	// Clear our FBOs
-	pCtx->clearFbo(mpPrevReprojFbo.get(), glm::vec4(0), 1.0f, 0, FboAttachmentType::All);
 
 	mNeedFboClear = false;
 
@@ -171,13 +166,10 @@ void BlockwiseMultiOrderFeatureRegression::accumulate_noisy_data(RenderContext* 
 	mpReprojectionVars["accept_bools"] = mInputTex.accept_bools;
 	mpReprojectionVars["out_prev_frame_pixel"] = mInputTex.prevFramePixel;
 
-
 	// Setup variables for our accumulate_noisy_data pass
 	mpReprojectionVars["PerFrameCB"]["frame_number"] = mAccumCount;
 
-
 	// Execute the accumulate_noisy_data pass
-//	mpGfxState->setFbo(mpCurReprojFbo);
 	mpReprojection->execute(pRenderContext, mpGfxState);
 
 }

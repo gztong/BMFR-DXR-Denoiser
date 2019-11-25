@@ -43,13 +43,6 @@ protected:
 	FullscreenLaunch::SharedPtr         mpReprojection;
 	FullscreenLaunch::SharedPtr         mpPostShader;
 
-	// Intermediate framebuffers
-	Fbo::SharedPtr            mpPingPongFbo[2];
-	Fbo::SharedPtr            mpFilteredPastFbo;
-	Fbo::SharedPtr            mpCurReprojFbo;
-	Fbo::SharedPtr            mpPrevReprojFbo;
-	Fbo::SharedPtr            mpOutputFbo;
-
 	// Textures expected by BMFR code
 	struct {
 		Texture::SharedPtr    curPos;

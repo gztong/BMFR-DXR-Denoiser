@@ -41,10 +41,7 @@ protected:
 
 	// BMFR passes
 	FullscreenLaunch::SharedPtr         mpReprojection;
-	FullscreenLaunch::SharedPtr         mpAtrous;
-	FullscreenLaunch::SharedPtr         mpModulate;
-	FullscreenLaunch::SharedPtr         mpFilterMoments;
-	FullscreenLaunch::SharedPtr         mpCombineUnfiltered;
+	FullscreenLaunch::SharedPtr         mpPostShader;
 
 	// Intermediate framebuffers
 	Fbo::SharedPtr            mpPingPongFbo[2];
@@ -63,15 +60,20 @@ protected:
 		Texture::SharedPtr    prevPos;
 		Texture::SharedPtr    prevNorm;
 		Texture::SharedPtr    prevNoisy;
-
 		Texture::SharedPtr    prevSpp;
 
 		Texture::SharedPtr    accept_bools;
+		Texture::SharedPtr    prevFramePixel;
+
 	} mInputTex;
 
 
     //determine whether we want to show denoise result or not
     bool                          mDoDenoise = true;
+	bool                          mBMFR_preprocess = true;
+	bool                          mBMFR_postprocess = true;
+
+
 
 
 private:
@@ -79,6 +81,7 @@ private:
 
 	void clearFbos(RenderContext* pCtx);
 	void accumulate_noisy_data(RenderContext* pRenderContext);
+	void accumulate_filtered_data(RenderContext* pRenderContext);
 	// How many frames have we accumulated so far?
 	uint32_t                      mAccumCount = 0;
 

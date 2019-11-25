@@ -15,6 +15,7 @@ RWTexture2D<float> gCurSpp; //count of samples over time
 Texture2D<float> gPrevSpp;
 
 RWTexture2D<uint> accept_bools; // is previous sample accepted
+RWTexture2D<float2> out_prev_frame_pixel; // save this for later, avoid calculating again
 
 import ShaderCommon; // Shared shading data structures
 
@@ -157,7 +158,7 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
                 float position_distance_squared = dot(position_difference, position_difference);
 
                 // World position distance discard
-               if (position_distance_squared < POSITION_LIMIT_SQUARED)
+                if (position_distance_squared < POSITION_LIMIT_SQUARED)
                 {
 					// Fetch previous frame normal
                     float3 prev_normal = gPrevNorm[sample_location].xyz;
@@ -169,7 +170,7 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
                     float normal_distance_squared = dot(normal_difference, normal_difference);
 
 					// Normal distance discard
-                 if (normal_distance_squared < NORMAL_LIMIT_SQUARED)
+                    if (normal_distance_squared < NORMAL_LIMIT_SQUARED)
                     {
 						// Pixel passes all tests so store it to accept bools
                         store_accept |= 1 << i;
@@ -185,14 +186,12 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
         {
             previous_color /= total_weight;
             sample_spp /= total_weight;
-
-         // Blend_alpha is dymically decided so that the result is average
-         // of all samples until the cap defined by BLEND_ALPHA is reached
+           // Blend_alpha is dymically decided so that the result is average
+           // of all samples until the cap defined by BLEND_ALPHA is reached
             blend_alpha = 1.f / (sample_spp + 1.f);
             blend_alpha = max(blend_alpha, BLEND_ALPHA);
         }
     } // end if frame_number > 0
-
 
    // Store new spp
     float new_spp = 1.f;
@@ -204,12 +203,10 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
 
     float3 new_color = blend_alpha * current_color + (1.f - blend_alpha) * previous_color;
 
-  //  if (pixel.x >= 0 && pixel.x <= IMAGE_WIDTH &&
-		//pixel.y >= 0 && pixel.y <= IMAGE_HEIGHT)
-  //  {
-        gCurNoisy[pixelPos] = float4(new_color, 1.f);
-        accept_bools[pixelPos] = store_accept;
-   // }
+    gCurNoisy[pixelPos] = float4(new_color, 1.f);
+    accept_bools[pixelPos] = store_accept;
+    out_prev_frame_pixel[pixelPos] = prev_frame_pixel_f;
+
 
     return gCurNoisy[pixelPos];
 }

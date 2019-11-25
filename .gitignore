@@ -8,8 +8,6 @@ FalcorRT.VC.db
 FalcorRT.VC.VC.opendb
 *.VC.opendb
 *.orig
-/pink_room/*
 *.VC.db
 Falcor/Media
 Falcor/Framework/Externals
-CommonPasses/Data/pink_room/*

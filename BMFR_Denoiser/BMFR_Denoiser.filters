@@ -92,16 +92,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data\Tutorial12\standardShadowRay.hlsli">
+    <None Include="Data\standardShadowRay.hlsli">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Data\Tutorial12\simpleDiffuseGIUtils.hlsli">
+    <None Include="Data\simpleDiffuseGIUtils.hlsli">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Data\Tutorial12\simpleDiffuseGI.rt.hlsl">
+    <None Include="Data\simpleDiffuseGI.rt.hlsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Data\Tutorial12\bmfrDenoise.ps.hlsl" />
-    <None Include="Data\Tutorial12\preprocess.ps.hlsl" />
+    <None Include="Data\bmfrDenoise.ps.hlsl" />
+    <None Include="Data\preprocess.ps.hlsl" />
   </ItemGroup>
 </Project>

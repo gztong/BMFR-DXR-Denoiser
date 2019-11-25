@@ -40,13 +40,13 @@
     <ClInclude Include="Passes\SimpleDiffuseGIPass.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data\Tutorial12\simpleDiffuseGI.rt.hlsl">
+    <None Include="Data\simpleDiffuseGI.rt.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data\Tutorial12\simpleDiffuseGIUtils.hlsli" />
-    <None Include="Data\Tutorial12\standardShadowRay.hlsli" />
+    <None Include="Data\simpleDiffuseGIUtils.hlsli" />
+    <None Include="Data\standardShadowRay.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CommonPasses\CommonPasses.vcxproj">
@@ -60,10 +60,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data\Tutorial12\bmfrDenoise.ps.hlsl">
+    <None Include="Data\bmfrDenoise.ps.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Data\Tutorial12\preprocess.ps.hlsl">
+    <None Include="Data\preprocess.ps.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

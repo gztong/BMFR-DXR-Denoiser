@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26228.18
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tutor12-DiffuseGlobalIllumination", "12-DiffuseGlobalIllumination\12-DiffuseGlobalIllumination.vcxproj", "{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BMFR_Denoiser", "BMFR_Denoiser\BMFR_Denoiser.vcxproj", "{6CE0B2E6-0EB4-4251-9DB4-BE2D6B7F3082}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Falcor", "Falcor\Framework\Source\Falcor.vcxproj", "{3B602F0E-3834-4F73-B97D-7DFC91597A98}"
 EndProject

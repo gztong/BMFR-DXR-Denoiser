@@ -26,27 +26,27 @@
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
 	// Create our rendering pipeline
-	RenderingPipeline *pipeline = new RenderingPipeline();
+	RenderingPipeline* pipeline = new RenderingPipeline();
 
-    // Add passes into our pipeline
-    //preprocess stage: ??? what should we do? Does the previous frame's world pos, normal and diffuse color needed in next frames?
+	// Add passes into our pipeline
+	//preprocess stage: ??? what should we do? Does the previous frame's world pos, normal and diffuse color needed in next frames?
 
-    //store the world position, world normal and material diffuse color into G-buffer as feature buffers
-    pipeline->setPass(0, LightProbeGBufferPass::create());
+	//store the world position, world normal and material diffuse color into G-buffer as feature buffers
+	pipeline->setPass(0, LightProbeGBufferPass::create());
 
-    //compute the pixel color uses GI 1spp
-    pipeline->setPass(1, SimpleDiffuseGIPass::create());
+	//compute the pixel color uses GI 1spp
+	pipeline->setPass(1, SimpleDiffuseGIPass::create());
 
-    //apply the denoise BMFR method on the image
-    pipeline->setPass(2, BlockwiseMultiOrderFeatureRegression::create(ResourceManager::kOutputChannel));
+	//apply the denoise BMFR method on the image
+	pipeline->setPass(2, BlockwiseMultiOrderFeatureRegression::create(ResourceManager::kOutputChannel));
 
-    //post process stage: temporarl accumulation and temporaral antialiasing -- need to add motion feature
-   //  pipeline->setPass(3, SimpleAccumulationPass::create(ResourceManager::kOutputChannel));
+	//post process stage: temporarl accumulation and temporaral antialiasing -- need to add motion feature
+	pipeline->setPass(3, SimpleAccumulationPass::create(ResourceManager::kOutputChannel));
 
-    // Define a set of config / window parameters for our program
-    SampleConfig config;
-    config.windowDesc.title = "BMFR denoiser demo";
-    config.windowDesc.resizableWindow = true;
+	// Define a set of config / window parameters for our program
+	SampleConfig config;
+	config.windowDesc.title = "BMFR denoiser demo";
+	config.windowDesc.resizableWindow = true;
 
 	// Start our program!
 	RenderingPipeline::run(pipeline, config);

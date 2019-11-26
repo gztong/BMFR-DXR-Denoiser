@@ -1,3 +1,4 @@
+!Falcor/Framework/Externals/dear_imgui_addons/*
 /Bin
 .vs/
 *.opensdf
@@ -10,4 +11,3 @@ FalcorRT.VC.VC.opendb
 *.orig
 *.VC.db
 Falcor/Media
-Falcor/Framework/Externals

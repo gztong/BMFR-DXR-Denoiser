@@ -20,15 +20,14 @@ This project is complete DXR pipeline that use 1 spp path tracing noisy image an
 
 
 
-### Build:
+### How to Build:
 
-Clone
+1. Clone
 
-Falcor -> run [update_dependencies.bat](https://github.com/gztong/BMFR-DXR-Denoiser/blob/master/Falcor/update_dependencies.bat) -> Copy **dear_imgui_addons** into **Framework/Externals**
-
-
-
-
+2. Go into **Falcor** Folder 
+3. run [update_dependencies.bat](https://github.com/gztong/BMFR-DXR-Denoiser/blob/master/Falcor/update_dependencies.bat)
+4. Open BMFR_Denoiser_Pipeline.sln
+5. Build + Start
 
 ----------------------------------------------------------------------------------------------
 Acknowledgments:

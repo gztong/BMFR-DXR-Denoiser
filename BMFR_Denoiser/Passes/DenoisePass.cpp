@@ -34,7 +34,7 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	mpResManager->requestTextureResource("BMFR_AcceptedBools", ResourceFormat::R32Uint);
 	mpResManager->requestTextureResource("BMFR_PrevFramePixel", ResourceFormat::RG16Float);
 
-
+	mpResManager->requestTextureResource("BMFR_Output");
 	// Create our graphics state and accumulation shader
 	mpGfxState = GraphicsState::create();
 
@@ -109,9 +109,10 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	mInputTex.prevNorm = mpResManager->getTexture("BMFR_PrevNorm");
 	mInputTex.prevNoisy = mpResManager->getTexture("BMFR_PrevNoisy");
 
-	mInputTex.accept_bools = mpResManager->getTexture("BMFR_AcceptedBool");
+	mInputTex.accept_bools = mpResManager->getTexture("BMFR_AcceptedBools");
 	mInputTex.prevFramePixel = mpResManager->getTexture("BMFR_PrevFramePixel");
 
+	mInputTex.output = mpResManager->getTexture("BMFR_Output");
 	auto denoiseShaderVars = mpDenoiseShader->getVars();
 	denoiseShaderVars["PerFrameCB"]["gAccumCount"] = mAccumCount;
 
@@ -139,6 +140,10 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	pRenderContext->blit(mInputTex.curNoisy->getSRV(), mInputTex.prevNoisy->getRTV());
 	pRenderContext->blit(mInputTex.curNorm->getSRV(), mInputTex.prevNorm->getRTV());
 	pRenderContext->blit(mInputTex.curPos->getSRV(), mInputTex.prevPos->getRTV());
+
+	if (mBMFR_postprocess)
+		pRenderContext->blit(mInputTex.output->getSRV(), mInputTex.curNoisy->getRTV());
+
 	mAccumCount++;
 }
 
@@ -180,6 +185,8 @@ void BlockwiseMultiOrderFeatureRegression::accumulate_filtered_data(RenderContex
 	mpPostVars["accept_bools"] = mInputTex.accept_bools;
 
 	mpPostVars["PerFrameCB"]["frame_number"] = mAccumCount;
+
+	mpPostVars["accumulated_frame"] = mInputTex.output;
 
 	mpPostShader->execute(pRenderContext, mpGfxState);
 

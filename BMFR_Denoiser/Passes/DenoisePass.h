@@ -56,6 +56,8 @@ protected:
 		Texture::SharedPtr    accept_bools;
 		Texture::SharedPtr    prevFramePixel;
 
+		Texture::SharedPtr    output;
+
 	} mInputTex;
 
 

@@ -28,6 +28,7 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
     float3 filtered_color = filtered_frame[pixel].xyz;
     float3 prev_color = float3(0.f, 0.f, 0.f);
     float blend_alpha = 1.f;
+    const uint accept = accept_bools[pixel];
 
     if (frame_number > 0)
     {
@@ -56,14 +57,14 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
                 prev_color += weight * accumulated_prev_frame[prev_frame_pixel + int2(1, 0)].xyz;
             }
 
-            if (accept & 0x03)
+            if (accept & 0x04)
             {
                 float weight = one_minus_prev_pixel_fract.x * prev_pixel_fract.y;
                 total_weight += weight;
                 prev_color += weight * accumulated_prev_frame[prev_frame_pixel + int2(0, 1)].xyz;
             }
 
-            if (accept & 0x04)
+            if (accept & 0x08)
             {
                 float weight = prev_pixel_fract.x * prev_pixel_fract.y;
                 total_weight += weight;

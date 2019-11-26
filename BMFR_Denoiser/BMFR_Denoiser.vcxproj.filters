@@ -102,4 +102,9 @@
       <UniqueIdentifier>{464e12e5-79ea-494a-a029-94156e713556}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Data\regressionCP.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
 </Project>

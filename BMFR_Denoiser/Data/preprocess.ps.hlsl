@@ -21,50 +21,6 @@ import ShaderCommon; // Shared shading data structures
 #define POSITION_LIMIT_SQUARED 0.01f
 #define NORMAL_LIMIT_SQUARED 1.0f
 #define BLEND_ALPHA 0.01f
-#define BLOCK_EDGE_LENGTH 32
-// #define HORIZONTAL_BLOCKS (WORKSET_WIDTH / BLOCK_EDGE_LENGTH)
-#define BLOCK_EDGE_HALF (BLOCK_EDGE_LENGTH / 2)
-#define BLOCK_OFFSETS_COUNT 16
-
-static const int2 BLOCK_OFFSETS[BLOCK_OFFSETS_COUNT] =
-{
-    int2(-14, -14),
-    int2(4, -6),
-    int2(-8, 14),
-    int2(8, 0),
-    int2(-10, -8),
-    int2(2, 12),
-    int2(12, -12),
-    int2(-10, 0),
-    int2(12, 14),
-    int2(-8, -16),
-    int2(6, 6),
-    int2(-2, -2),
-    int2(6, -14),
-	int2(-16, 12),
-    int2(14, -4),
-	int2(-6, 4),
-};
-
-// Simple mirroring of image index if it is out of bounds.
-// NOTE: Works only if index is less than one size out of bounds.
-static inline int mirror(int index, int size)
-{
-    if (index < 0)
-        index = abs(index) - 1;
-    else if (index >= size)
-        index = 2 * size - index - 1;
-
-    return index;
-}
-static inline int2 mirror2(int2 index, int2 size)
-{
-    index.x = mirror(index.x, size.x);
-    index.y = mirror(index.y, size.y);
-
-    return index;
-}
-
 
 cbuffer PerFrameCB
 {

@@ -22,7 +22,7 @@
 // Some global vars, used to simplify changing shader location & entry points
 namespace {
 	// Where is our shaders located?  -- we will directly find in the Data folder
-	const char* kFileRayTrace = "Tutorial12\\simpleDiffuseGI.rt.hlsl";
+	const char* kFileRayTrace = "simpleDiffuseGI.rt.hlsl";
 
 	// What are the entry points in that shader for various ray tracing shaders?
 	const char* kEntryPointRayGen        = "SimpleDiffuseGIRayGen";

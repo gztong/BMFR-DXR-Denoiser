@@ -32,7 +32,7 @@ protected:
     std::string                   mDenoiseChannel;
 
     // State for our accumulation shader
-    FullscreenLaunch::SharedPtr   mpDenoiseShader;
+    //FullscreenLaunch::SharedPtr   mpDenoiseShader;
     GraphicsState::SharedPtr      mpGfxState;
     Fbo::SharedPtr                mpInternalFbo;
 
@@ -41,6 +41,9 @@ protected:
 
 	// BMFR passes
 	FullscreenLaunch::SharedPtr         mpReprojection;
+	ComputeProgram::SharedPtr			mpRegression;
+	ComputeState::SharedPtr				mpCPState;
+	ComputeVars::SharedPtr				mpRegressionVars;
 	FullscreenLaunch::SharedPtr         mpAtrous;
 	FullscreenLaunch::SharedPtr         mpModulate;
 	FullscreenLaunch::SharedPtr         mpFilterMoments;
@@ -66,6 +69,9 @@ protected:
 
 		Texture::SharedPtr    prevSpp;
 
+		Texture::SharedPtr    tmp_data;
+		Texture::SharedPtr    out_data;
+
 		Texture::SharedPtr    accept_bools;
 	} mInputTex;
 
@@ -79,7 +85,8 @@ private:
 
 	void clearFbos(RenderContext* pCtx);
 	void accumulate_noisy_data(RenderContext* pRenderContext);
+	void fit_noisy_color(RenderContext* pRenderContext);
 	// How many frames have we accumulated so far?
-	uint32_t                      mAccumCount = 0;
-
+	uint32_t mAccumCount = 0;
+	int	cbData[4];
 };

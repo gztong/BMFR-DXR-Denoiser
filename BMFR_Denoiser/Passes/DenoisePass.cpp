@@ -136,13 +136,14 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	//pRenderContext->blit(mpInternalFbo->getColorTexture(0)->getSRV(), inputTexture->getRTV());
 
 	// Swap resources so we're ready for next frame.
-
+	// TODO: change the swap logic
 	pRenderContext->blit(mInputTex.curNoisy->getSRV(), mInputTex.prevNoisy->getRTV());
 	pRenderContext->blit(mInputTex.curNorm->getSRV(), mInputTex.prevNorm->getRTV());
 	pRenderContext->blit(mInputTex.curPos->getSRV(), mInputTex.prevPos->getRTV());
 
-	if (mBMFR_postprocess)
+	if (mBMFR_postprocess) {
 		pRenderContext->blit(mInputTex.output->getSRV(), mInputTex.curNoisy->getRTV());
+	}
 
 	mAccumCount++;
 }

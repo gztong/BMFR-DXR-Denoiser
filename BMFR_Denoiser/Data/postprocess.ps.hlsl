@@ -5,7 +5,6 @@ import ShaderCommon; // Shared shading data structures
 #define SECOND_BLEND_ALPHA 0.1f
 
 Texture2D<float4> filtered_frame; // new color from preprocess and filter pass
-Texture2D<float> gCurSpp; // count of samples over time
 
 Texture2D<float4> accumulated_prev_frame; // input
 Texture2D<float4> albedo; // input
@@ -25,7 +24,10 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
 {
     const uint2 pixel = (uint2) pos.xy;
 
-    float3 filtered_color = filtered_frame[pixel].xyz;
+	const float4 filterData = filtered_frame[pixel];
+	const float3 filtered_color = filterData.xyz;
+	const float cusSpp = filterData.w;
+	
     float3 prev_color = float3(0.f, 0.f, 0.f);
     float blend_alpha = 1.f;
     const uint accept = accept_bools[pixel];
@@ -35,14 +37,14 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
         const uint accept = accept_bools[pixel];
         if (accept > 0)
         { // If any prev frame sample is accepted
-			         // Bilinear sampling
+			// Bilinear sampling
             const float2 prev_frame_pixel_f = in_prev_frame_pixel[pixel];
             const int2 prev_frame_pixel = int2(prev_frame_pixel_f);
             const float2 prev_pixel_fract = prev_frame_pixel_f - float2(prev_frame_pixel);
             const float2 one_minus_prev_pixel_fract = 1.f - prev_pixel_fract;
             float total_weight = 0.f;
 
-         // Accept tells if the sample is acceptable based on world position and normal
+			// Accept tells if the sample is acceptable based on world position and normal
             if (accept & 0x01)
             {
                 float weight = one_minus_prev_pixel_fract.x * one_minus_prev_pixel_fract.y;
@@ -75,7 +77,7 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
             {
             // Blend_alpha is dymically decided so that the result is average
             // of all samples until the cap defined by SECOND_BLEND_ALPHA is reached
-                blend_alpha = 1.f / gCurSpp[pixel];
+				blend_alpha = 1.f / cusSpp;
                 blend_alpha = max(blend_alpha, SECOND_BLEND_ALPHA);
 
                 prev_color /= total_weight;

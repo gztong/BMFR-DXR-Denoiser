@@ -102,7 +102,7 @@ void BlockwiseMultiOrderFeatureRegression::renderGui(Gui* pGui)
 	dirty |= (int)pGui->addCheckBox(mDoDenoise ? "Do BMFR Denoise" : "Ignore the denoise stage", mDoDenoise);
 	dirty |= (int)pGui->addCheckBox(mBMFR_preprocess ? "Do Pre-Process" : "Skip Pre-process", mBMFR_preprocess);
 	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Post-Process" : "Skip Post-process", mBMFR_postprocess);
-	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Regression" : "Skip Regression", mBMFR_regression);
+	dirty |= (int)pGui->addCheckBox(mBMFR_regression ? "Do Regression" : "Skip Regression", mBMFR_regression);
 
 	if (dirty) setRefreshFlag();
 }

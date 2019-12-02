@@ -29,6 +29,8 @@ cbuffer PerFrameCB
 float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
 {
     uint2 pixelPos = (uint2) pos.xy;
+	if (texC.x > 0.5) return gCurNoisy[pixelPos];
+
     uint2 dim;
     gCurPos.GetDimensions(dim.x, dim.y);
     uint IMAGE_WIDTH = dim.x;

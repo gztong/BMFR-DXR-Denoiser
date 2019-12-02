@@ -23,6 +23,7 @@ cbuffer PerFrameCB
 float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
 {
     const uint2 pixel = (uint2) pos.xy;
+	if (texC.x > 0.5) return accumulated_frame[pixel] = filtered_frame[pixel];
 
 	const float4 filterData = filtered_frame[pixel];
 	const float3 filtered_color = filterData.xyz;
@@ -86,7 +87,7 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
     }
 	// Mix with colors and store results
     float3 accumulated_color = blend_alpha * filtered_color + (1.f - blend_alpha) * prev_color;
-    accumulated_frame[pixel] = float4(accumulated_color, 1.f);
+	accumulated_frame[pixel] = float4(accumulated_color, 1.f);
 
     return accumulated_frame[pixel];
 

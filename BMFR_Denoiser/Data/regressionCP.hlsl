@@ -350,6 +350,6 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 			bchannal += rmat[col][FEATURES_COUNT + 2] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
         }
 		bchannal = bchannal < 0 ? 0 : bchannal;
-		gCurNoisy[uv] = albedo[uv] * float4(rchannal, gchannal, bchannal, 1);
+		gCurNoisy[uv] = albedo[uv] * float4(rchannal, gchannal, bchannal, gCurNoisy[uv].w);
 	}
 }

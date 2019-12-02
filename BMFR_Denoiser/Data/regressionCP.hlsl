@@ -8,6 +8,7 @@ cbuffer PerFrameCB
 
 Texture2D<float4> gCurPos; //world position
 Texture2D<float4> gCurNorm; //world normal
+Texture2D<float4> albedo;
 
 RWTexture2D<float> tmp_data;// pixelCount * (FEATURES_COUNT + color_channels)  
 RWTexture2D<float> out_data;// scaled features and filtered colors
@@ -117,9 +118,9 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
         tmp_data[uint2(index, 7 + BLOCK_OFFSET)] = gCurPos[uv].x * gCurPos[uv].x;
         tmp_data[uint2(index, 8 + BLOCK_OFFSET)] = gCurPos[uv].y * gCurPos[uv].y;
         tmp_data[uint2(index, 9 + BLOCK_OFFSET)] = gCurPos[uv].z * gCurPos[uv].z;
-		tmp_data[uint2(index, 10 + BLOCK_OFFSET)] = gCurNoisy[uv].x;
-		tmp_data[uint2(index, 11 + BLOCK_OFFSET)] = gCurNoisy[uv].y;
-		tmp_data[uint2(index, 12 + BLOCK_OFFSET)] = gCurNoisy[uv].z;
+		tmp_data[uint2(index, 10 + BLOCK_OFFSET)] = gCurNoisy[uv].x / (albedo[uv].x + 0.000000001);
+		tmp_data[uint2(index, 11 + BLOCK_OFFSET)] = gCurNoisy[uv].y / (albedo[uv].y + 0.000000001);
+		tmp_data[uint2(index, 12 + BLOCK_OFFSET)] = gCurNoisy[uv].z / (albedo[uv].z + 0.000000001);
 	}
 	GroupMemoryBarrierWithGroupSync();
 
@@ -349,6 +350,6 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 			bchannal += rmat[col][FEATURES_COUNT + 2] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
         }
 		bchannal = bchannal < 0 ? 0 : bchannal;
-		gCurNoisy[uv] = float4(rchannal, gchannal, bchannal, 1);
+		gCurNoisy[uv] = albedo[uv] * float4(rchannal, gchannal, bchannal, 1);
 	}
 }

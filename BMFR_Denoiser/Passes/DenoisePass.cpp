@@ -163,7 +163,6 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 		pRenderContext->blit(mInputTex.output->getSRV(), mInputTex.prevFiltered->getRTV());
 	}
 	
-
 	mAccumCount++;
 }
 
@@ -218,6 +217,7 @@ void BlockwiseMultiOrderFeatureRegression::fit_noisy_color(RenderContext* pRende
 	mpRegressionVars->setTexture("tmp_data", mInputTex.tmp_data);
 	mpRegressionVars->setTexture("out_data", mInputTex.out_data);
 	mpRegressionVars->setTexture("gCurNoisy", mInputTex.curNoisy);
+	mpRegressionVars->setTexture("albedo", mpResManager->getTexture("MaterialDiffuse"));
 
 	// Setup constant buffer
 	ConstantBuffer::SharedPtr pcb = mpRegressionVars->getConstantBuffer("PerFrameCB");

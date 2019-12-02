@@ -35,12 +35,13 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	mpResManager->requestTextureResource("BMFR_CurSpp", ResourceFormat::R32Uint);
 
 	int width, height;
-	width = (mpResManager->getWidth() + 31) / 32; // 32 is block edge length
-	height = (mpResManager->getHeight() + 31) / 32;
+	width = (1920 + 31) / 32; // 32 is block edge length
+	height = (1055 + 31) / 32;
 	int w = width + 1;
 	int h = height + 1;
-	mpResManager->requestTextureResource("tmp_data", ResourceFormat::RGBA32Float, ResourceManager::kDefaultFlags, w * h * 1024, 13);//change texture size if change blocksize and features num
-	mpResManager->requestTextureResource("out_data", ResourceFormat::R32Uint, ResourceManager::kDefaultFlags, w * h * 1024, 13);//change texture size if change blocksize and features num
+	w /= 2;
+	mpResManager->requestTextureResource("tmp_data", ResourceFormat::R32Float, ResourceManager::kDefaultFlags, 1024, w * h * 13);//change texture size if change blocksize and features num
+	mpResManager->requestTextureResource("out_data", ResourceFormat::R32Float, ResourceManager::kDefaultFlags, 1024, w * h * 13);//change texture size if change blocksize and features num
 
 
 	//UnorderedAccessView::SharedPtr uavView = UnorderedAccessView::create(1,0,);
@@ -143,14 +144,6 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 
 	// Peform BMFR
 	accumulate_noisy_data(pRenderContext);
-	fit_noisy_color(pRenderContext);
-
-	//// Do the accumulatione
-	//mpDenoiseShader->execute(pRenderContext, mpGfxState);
-	//// We've accumulated our result.  Copy that back to the input/output buffer
-	//pRenderContext->blit(mpInternalFbo->getColorTexture(0)->getSRV(), inputTexture->getRTV());
-
-	pRenderContext->blit(mInputTex.curNoisy->getSRV(), inputTexture->getRTV());
 
 	// Swap resources so we're ready for next frame.
 	//std::swap(mpCurReprojFbo, mpPrevReprojFbo);
@@ -159,6 +152,15 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	pRenderContext->blit(mInputTex.curNorm->getSRV(), mInputTex.prevNorm->getRTV());
 	pRenderContext->blit(mInputTex.curPos->getSRV(), mInputTex.prevPos->getRTV());
 	pRenderContext->blit(mInputTex.curSpp->getSRV(), mInputTex.prevSpp->getRTV());
+
+	fit_noisy_color(pRenderContext);
+
+	//// Do the accumulatione
+	//mpDenoiseShader->execute(pRenderContext, mpGfxState);
+	//// We've accumulated our result.  Copy that back to the input/output buffer
+	//pRenderContext->blit(mpInternalFbo->getColorTexture(0)->getSRV(), inputTexture->getRTV());
+
+	pRenderContext->blit(mInputTex.curNoisy->getSRV(), inputTexture->getRTV());
 
 }
 
@@ -196,7 +198,7 @@ void BlockwiseMultiOrderFeatureRegression::fit_noisy_color(RenderContext* pRende
 
 	// Setup constant buffer
 	ConstantBuffer::SharedPtr pcb = mpRegressionVars->getConstantBuffer("PerFrameCB");
-	cbData[0] = 0;// mAccumCount;
+	cbData[0] = mAccumCount;
 	int width = mInputTex.curNoisy->getWidth();
 	cbData[1] = width;
 	int height = mInputTex.curNoisy->getHeight();
@@ -205,8 +207,9 @@ void BlockwiseMultiOrderFeatureRegression::fit_noisy_color(RenderContext* pRende
 	height = (height + 31) / 32;
 	int w = width + 1;
 	int h = height + 1;
-	width = w * 32;
-	cbData[3] = width;
+
+	w /= 2;
+	cbData[3] = w;
 
 	pcb->setBlob(cbData, 0, 128/*4 * 32*/);
 	

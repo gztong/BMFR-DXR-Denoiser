@@ -18,7 +18,7 @@ import ShaderCommon; // Shared shading data structures
 
 #define POSITION_LIMIT_SQUARED 0.01f
 #define NORMAL_LIMIT_SQUARED 1.0f
-#define BLEND_ALPHA 0.01f
+#define BLEND_ALPHA 0.2f
 
 cbuffer PerFrameCB
 {

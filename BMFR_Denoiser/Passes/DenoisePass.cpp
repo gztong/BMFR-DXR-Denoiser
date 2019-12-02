@@ -75,7 +75,6 @@ void BlockwiseMultiOrderFeatureRegression::initScene(RenderContext* pRenderConte
 	// When our renderer moves around, we want to reset accumulation
 	mpScene = pScene;
 	mAccumCount = 0;
-
 }
 
 void BlockwiseMultiOrderFeatureRegression::resize(uint32_t width, uint32_t height)
@@ -156,13 +155,14 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	if (mBMFR_regression) {
 		fit_noisy_color(pRenderContext);
 	}
-	pRenderContext->blit(mInputTex.curNoisy->getSRV(), mInputTex.prevFiltered->getRTV());
 	
 	if (mBMFR_postprocess) {
 		accumulate_filtered_data(pRenderContext);
 
 		pRenderContext->blit(mInputTex.output->getSRV(), mInputTex.curNoisy->getRTV());
+		pRenderContext->blit(mInputTex.output->getSRV(), mInputTex.prevFiltered->getRTV());
 	}
+	
 
 	mAccumCount++;
 }

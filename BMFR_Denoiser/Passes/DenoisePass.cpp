@@ -6,6 +6,7 @@ namespace {
 	const char* kDenoiseFragShader = "bmfrDenoise.ps.hlsl";
 	const char* kAccumNoisyDataShader = "preprocess.ps.hlsl";
 	const char* kRegressionShader = "regressionCP.hlsl";
+	const char* kAccumFilteredDataShader = "postprocess.ps.hlsl";
 };
 
 BlockwiseMultiOrderFeatureRegression::BlockwiseMultiOrderFeatureRegression(const std::string& bufferToDenoise)
@@ -26,14 +27,16 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	mpResManager->requestTextureResource("BMFR_PrevNorm");
 	mpResManager->requestTextureResource("BMFR_PrevPos");
 	mpResManager->requestTextureResource("BMFR_PrevNoisy");
-	mpResManager->requestTextureResource("BMFR_PrevSpp", ResourceFormat::R32Uint);
 
 	mpResManager->requestTextureResource("BMFR_CurNorm");
 	mpResManager->requestTextureResource("BMFR_CurPos");
 	//mpResManager->requestTextureResource(mDenoiseChannel); //current frame image
 
-	mpResManager->requestTextureResource("BMFR_CurSpp", ResourceFormat::R32Uint);
+	mpResManager->requestTextureResource("BMFR_AcceptedBools", ResourceFormat::R32Uint);
+	mpResManager->requestTextureResource("BMFR_PrevFramePixel", ResourceFormat::RG16Float);
 
+	mpResManager->requestTextureResource("BMFR_Output");
+	
 	int width, height;
 	width = (1920 + 31) / 32; // 32 is block edge length
 	height = (1055 + 31) / 32;
@@ -49,10 +52,10 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	// Create our graphics state and accumulation shader
 	mpGfxState = GraphicsState::create();
 
-
 	// mpDenoiseShader = FullscreenLaunch::create(kDenoiseFragShader);
-	mpReprojection = FullscreenLaunch::create(kAccumNoisyDataShader);
+	mpPreprocessShader = FullscreenLaunch::create(kAccumNoisyDataShader);
 	mpRegression = ComputeProgram::createFromFile("regressionCP.hlsl", "fit");
+	mpPostShader = FullscreenLaunch::create(kAccumFilteredDataShader);
 	mpCPState = ComputeState::create();
 	mpCPState->setProgram(mpRegression);
 	mpRegressionVars = ComputeVars::create(mpRegression->getReflector());
@@ -61,6 +64,7 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	mpRegressionVars->setConstantBuffer("PerFrameCB", pCB);
 	// Our GUI needs less space than other passes, so shrink the GUI window.
 	setGuiSize(ivec2(250, 135));
+
 
 	return true;
 }
@@ -71,7 +75,6 @@ void BlockwiseMultiOrderFeatureRegression::initScene(RenderContext* pRenderConte
 	mpScene = pScene;
 	mAccumCount = 0;
 
-
 }
 
 void BlockwiseMultiOrderFeatureRegression::resize(uint32_t width, uint32_t height)
@@ -80,19 +83,14 @@ void BlockwiseMultiOrderFeatureRegression::resize(uint32_t width, uint32_t heigh
 	mpInternalFbo = ResourceManager::createFbo(width, height, ResourceFormat::RGBA32Float);
 	mpGfxState->setFbo(mpInternalFbo);
 
-	mpCurReprojFbo = ResourceManager::createFbo(width, height, ResourceFormat::RGBA32Float);
-	mpPrevReprojFbo = ResourceManager::createFbo(width, height, ResourceFormat::RGBA32Float);
-
 	mNeedFboClear = true;
 	mAccumCount = 0;
-
 }
 
 
 void BlockwiseMultiOrderFeatureRegression::clearFbos(RenderContext* pCtx)
 {
 	// Clear our FBOs
-	pCtx->clearFbo(mpPrevReprojFbo.get(), glm::vec4(0), 1.0f, 0, FboAttachmentType::All);
 
 	mNeedFboClear = false;
 
@@ -102,6 +100,8 @@ void BlockwiseMultiOrderFeatureRegression::renderGui(Gui* pGui)
 {
 	int dirty = 0;
 	dirty |= (int)pGui->addCheckBox(mDoDenoise ? "Do BMFR Denoise" : "Ignore the denoise stage", mDoDenoise);
+	dirty |= (int)pGui->addCheckBox(mBMFR_preprocess ? "Do Pre-Process" : "Skip Pre-process", mBMFR_preprocess);
+	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Post-Process" : "Skip Post-process", mBMFR_postprocess);
 
 	if (dirty) setRefreshFlag();
 }
@@ -119,23 +119,22 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	if (!inputTexture || !mDoDenoise) return;
 
 	if (mNeedFboClear) clearFbos(pRenderContext);
-	mpReprojection->setCamera(mpScene->getActiveCamera());
 
 
 	mInputTex.curPos = mpResManager->getTexture("WorldPosition");
 	mInputTex.curNorm = mpResManager->getTexture("WorldNormal");
 	mInputTex.curNoisy = mpResManager->getTexture(mDenoiseChannel);
-	mInputTex.curSpp = mpResManager->getTexture("BMFR_CurSpp");
 
 	mInputTex.prevPos = mpResManager->getTexture("BMFR_PrevPos");
 	mInputTex.prevNorm = mpResManager->getTexture("BMFR_PrevNorm");
 	mInputTex.prevNoisy = mpResManager->getTexture("BMFR_PrevNoisy");
-	mInputTex.prevSpp = mpResManager->getTexture("BMFR_PrevSpp");
 	mInputTex.tmp_data = mpResManager->getTexture("tmp_data");
 	mInputTex.out_data = mpResManager->getTexture("out_data");
 
-	//auto denoiseShaderVars = mpDenoiseShader->getVars();
-	//denoiseShaderVars["PerFrameCB"]["gAccumCount"] = mAccumCount++;
+	mInputTex.accept_bools = mpResManager->getTexture("BMFR_AcceptedBools");
+	mInputTex.prevFramePixel = mpResManager->getTexture("BMFR_PrevFramePixel");
+
+	mInputTex.output = mpResManager->getTexture("BMFR_Output");
 
 	////pass four variables in, world pos, world normal, diffuse color and curr frame image
 	//denoiseShaderVars["gPos"] = mpResManager->getTexture("WorldPosition");
@@ -143,49 +142,67 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	//denoiseShaderVars["gDiffuseMatl"] = mpResManager->getTexture("MaterialDiffuse");
 
 	// Peform BMFR
-	accumulate_noisy_data(pRenderContext);
-
-	// Swap resources so we're ready for next frame.
-	//std::swap(mpCurReprojFbo, mpPrevReprojFbo);
-
+	if (mBMFR_preprocess) {
+		accumulate_noisy_data(pRenderContext);
+	}
+	
 	pRenderContext->blit(mInputTex.curNoisy->getSRV(), mInputTex.prevNoisy->getRTV());
 	pRenderContext->blit(mInputTex.curNorm->getSRV(), mInputTex.prevNorm->getRTV());
-	pRenderContext->blit(mInputTex.curPos->getSRV(), mInputTex.prevPos->getRTV());
-	pRenderContext->blit(mInputTex.curSpp->getSRV(), mInputTex.prevSpp->getRTV());
+	pRenderContext->blit(mInputTex.curPos->getSRV(), mInputTex.prevPos->get
 
 	fit_noisy_color(pRenderContext);
+	
+	if (mBMFR_postprocess) {
+		accumulate_filtered_data(pRenderContext);
 
-	//// Do the accumulatione
-	//mpDenoiseShader->execute(pRenderContext, mpGfxState);
-	//// We've accumulated our result.  Copy that back to the input/output buffer
-	//pRenderContext->blit(mpInternalFbo->getColorTexture(0)->getSRV(), inputTexture->getRTV());
+		pRenderContext->blit(mInputTex.output->getSRV(), mInputTex.curNoisy->getRTV());
+	}
 
-	pRenderContext->blit(mInputTex.curNoisy->getSRV(), inputTexture->getRTV());
-
+	mAccumCount++;
 }
 
 void BlockwiseMultiOrderFeatureRegression::accumulate_noisy_data(RenderContext* pRenderContext)
 {
+	mpPreprocessShader->setCamera(mpScene->getActiveCamera());
+
 	// Setup textures for our accumulate_noisy_data shader pass
-	auto mpReprojectionVars = mpReprojection->getVars();
-	mpReprojectionVars["gCurPos"] = mInputTex.curPos;
-	mpReprojectionVars["gCurNorm"] = mInputTex.curNorm;
-	mpReprojectionVars["gCurNoisy"] = mInputTex.curNoisy;
-	mpReprojectionVars["gCurSpp"] = mInputTex.curSpp;
+	auto mpPreprocessShaderVars = mpPreprocessShader->getVars();
+	mpPreprocessShaderVars["gCurPos"] = mInputTex.curPos;
+	mpPreprocessShaderVars["gCurNorm"] = mInputTex.curNorm;
+	mpPreprocessShaderVars["gCurNoisy"] = mInputTex.curNoisy;
 
-	mpReprojectionVars["gPrevPos"] = mInputTex.prevPos;
-	mpReprojectionVars["gPrevNorm"] = mInputTex.prevNorm;
-	mpReprojectionVars["gPrevNoisy"] = mInputTex.prevNoisy;
-	mpReprojectionVars["gPrevSpp"] = mInputTex.prevSpp;
+	mpPreprocessShaderVars["gPrevPos"] = mInputTex.prevPos;
+	mpPreprocessShaderVars["gPrevNorm"] = mInputTex.prevNorm;
+	mpPreprocessShaderVars["gPrevNoisy"] = mInputTex.prevNoisy;
 
+	mpPreprocessShaderVars["accept_bools"] = mInputTex.accept_bools;
+	mpPreprocessShaderVars["out_prev_frame_pixel"] = mInputTex.prevFramePixel;
 
 	// Setup variables for our accumulate_noisy_data pass
-	mpReprojectionVars["PerFrameCB"]["frame_number"] = mAccumCount++;
-
+	mpPreprocessShaderVars["PerFrameCB"]["frame_number"] = mAccumCount;
 
 	// Execute the accumulate_noisy_data pass
-	//mpGfxState->setFbo(mpCurReprojFbo);
-	mpReprojection->execute(pRenderContext, mpGfxState);
+	mpPreprocessShader->execute(pRenderContext, mpGfxState);
+
+}
+
+
+void BlockwiseMultiOrderFeatureRegression::accumulate_filtered_data(RenderContext* pRenderContext)
+{
+	auto mpPostVars = mpPostShader->getVars();
+	mpPostVars["filtered_frame"] = mInputTex.curNoisy; // TODO, change name
+
+	mpPostVars["accumulated_prev_frame"] = mInputTex.prevNoisy;
+
+	mpPostVars["albedo"] = mpResManager->getTexture("MaterialDiffuse");
+	mpPostVars["in_prev_frame_pixel"] = mInputTex.prevFramePixel;
+	mpPostVars["accept_bools"] = mInputTex.accept_bools;
+
+	mpPostVars["PerFrameCB"]["frame_number"] = mAccumCount;
+
+	mpPostVars["accumulated_frame"] = mInputTex.output;
+
+	mpPostShader->execute(pRenderContext, mpGfxState);
 
 }
 

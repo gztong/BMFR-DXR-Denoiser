@@ -40,45 +40,37 @@ protected:
     Scene::SharedPtr              mpScene;
 
 	// BMFR passes
-	FullscreenLaunch::SharedPtr         mpReprojection;
+	FullscreenLaunch::SharedPtr         mpPreprocessShader;
+	FullscreenLaunch::SharedPtr         mpPostShader;
 	ComputeProgram::SharedPtr			mpRegression;
 	ComputeState::SharedPtr				mpCPState;
 	ComputeVars::SharedPtr				mpRegressionVars;
-	FullscreenLaunch::SharedPtr         mpAtrous;
-	FullscreenLaunch::SharedPtr         mpModulate;
-	FullscreenLaunch::SharedPtr         mpFilterMoments;
-	FullscreenLaunch::SharedPtr         mpCombineUnfiltered;
-
-	// Intermediate framebuffers
-	Fbo::SharedPtr            mpPingPongFbo[2];
-	Fbo::SharedPtr            mpFilteredPastFbo;
-	Fbo::SharedPtr            mpCurReprojFbo;
-	Fbo::SharedPtr            mpPrevReprojFbo;
-	Fbo::SharedPtr            mpOutputFbo;
 
 	// Textures expected by BMFR code
 	struct {
 		Texture::SharedPtr    curPos;
 		Texture::SharedPtr    curNorm;
 		Texture::SharedPtr    curNoisy;
-		Texture::SharedPtr    curSpp;
 
 		Texture::SharedPtr    prevPos;
 		Texture::SharedPtr    prevNorm;
 		Texture::SharedPtr    prevNoisy;
 
-		Texture::SharedPtr    prevSpp;
-
 		Texture::SharedPtr    tmp_data;
 		Texture::SharedPtr    out_data;
 
 		Texture::SharedPtr    accept_bools;
+		Texture::SharedPtr    prevFramePixel;
+
+		Texture::SharedPtr    output;
+
 	} mInputTex;
 
 
     //determine whether we want to show denoise result or not
     bool                          mDoDenoise = true;
-
+	bool                          mBMFR_preprocess = true;
+	bool                          mBMFR_postprocess = true;
 
 private:
 	bool mNeedFboClear;
@@ -86,6 +78,7 @@ private:
 	void clearFbos(RenderContext* pCtx);
 	void accumulate_noisy_data(RenderContext* pRenderContext);
 	void fit_noisy_color(RenderContext* pRenderContext);
+	void accumulate_filtered_data(RenderContext* pRenderContext);
 	// How many frames have we accumulated so far?
 	uint32_t mAccumCount = 0;
 	int	cbData[4];

@@ -55,6 +55,7 @@ protected:
 		Texture::SharedPtr    prevPos;
 		Texture::SharedPtr    prevNorm;
 		Texture::SharedPtr    prevNoisy;
+		Texture::SharedPtr    prevFiltered;
 
 		Texture::SharedPtr    tmp_data;
 		Texture::SharedPtr    out_data;
@@ -71,6 +72,7 @@ protected:
     bool                          mDoDenoise = true;
 	bool                          mBMFR_preprocess = true;
 	bool                          mBMFR_postprocess = true;
+	bool                          mBMFR_regression = true;
 
 private:
 	bool mNeedFboClear;

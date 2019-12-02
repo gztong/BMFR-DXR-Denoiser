@@ -27,6 +27,7 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	mpResManager->requestTextureResource("BMFR_PrevNorm");
 	mpResManager->requestTextureResource("BMFR_PrevPos");
 	mpResManager->requestTextureResource("BMFR_PrevNoisy");
+	mpResManager->requestTextureResource("BMFR_PrevFiltered");
 
 	mpResManager->requestTextureResource("BMFR_CurNorm");
 	mpResManager->requestTextureResource("BMFR_CurPos");
@@ -102,6 +103,7 @@ void BlockwiseMultiOrderFeatureRegression::renderGui(Gui* pGui)
 	dirty |= (int)pGui->addCheckBox(mDoDenoise ? "Do BMFR Denoise" : "Ignore the denoise stage", mDoDenoise);
 	dirty |= (int)pGui->addCheckBox(mBMFR_preprocess ? "Do Pre-Process" : "Skip Pre-process", mBMFR_preprocess);
 	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Post-Process" : "Skip Post-process", mBMFR_postprocess);
+	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Regression" : "Skip Regression", mBMFR_regression);
 
 	if (dirty) setRefreshFlag();
 }
@@ -128,6 +130,7 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	mInputTex.prevPos = mpResManager->getTexture("BMFR_PrevPos");
 	mInputTex.prevNorm = mpResManager->getTexture("BMFR_PrevNorm");
 	mInputTex.prevNoisy = mpResManager->getTexture("BMFR_PrevNoisy");
+	mInputTex.prevFiltered = mpResManager->getTexture("BMFR_PrevFiltered");
 	mInputTex.tmp_data = mpResManager->getTexture("tmp_data");
 	mInputTex.out_data = mpResManager->getTexture("out_data");
 
@@ -148,9 +151,12 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 	
 	pRenderContext->blit(mInputTex.curNoisy->getSRV(), mInputTex.prevNoisy->getRTV());
 	pRenderContext->blit(mInputTex.curNorm->getSRV(), mInputTex.prevNorm->getRTV());
-	pRenderContext->blit(mInputTex.curPos->getSRV(), mInputTex.prevPos->get
+	pRenderContext->blit(mInputTex.curPos->getSRV(), mInputTex.prevPos->getRTV());
 
-	fit_noisy_color(pRenderContext);
+	if (mBMFR_regression) {
+		fit_noisy_color(pRenderContext);
+	}
+	pRenderContext->blit(mInputTex.curNoisy->getSRV(), mInputTex.prevFiltered->getRTV());
 	
 	if (mBMFR_postprocess) {
 		accumulate_filtered_data(pRenderContext);
@@ -192,7 +198,7 @@ void BlockwiseMultiOrderFeatureRegression::accumulate_filtered_data(RenderContex
 	auto mpPostVars = mpPostShader->getVars();
 	mpPostVars["filtered_frame"] = mInputTex.curNoisy; // TODO, change name
 
-	mpPostVars["accumulated_prev_frame"] = mInputTex.prevNoisy;
+	mpPostVars["accumulated_prev_frame"] = mInputTex.prevFiltered;
 
 	mpPostVars["albedo"] = mpResManager->getTexture("MaterialDiffuse");
 	mpPostVars["in_prev_frame_pixel"] = mInputTex.prevFramePixel;

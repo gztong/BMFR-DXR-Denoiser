@@ -118,9 +118,9 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
         tmp_data[uint2(index, 7 + BLOCK_OFFSET)] = gCurPos[uv].x * gCurPos[uv].x;
         tmp_data[uint2(index, 8 + BLOCK_OFFSET)] = gCurPos[uv].y * gCurPos[uv].y;
         tmp_data[uint2(index, 9 + BLOCK_OFFSET)] = gCurPos[uv].z * gCurPos[uv].z;
-		tmp_data[uint2(index, 10 + BLOCK_OFFSET)] = gCurNoisy[uv].x / (albedo[uv].x + 0.000000001);
-		tmp_data[uint2(index, 11 + BLOCK_OFFSET)] = gCurNoisy[uv].y / (albedo[uv].y + 0.000000001);
-		tmp_data[uint2(index, 12 + BLOCK_OFFSET)] = gCurNoisy[uv].z / (albedo[uv].z + 0.000000001);
+		tmp_data[uint2(index, 10 + BLOCK_OFFSET)] = gCurNoisy[uv].x / (albedo[uv].x + 0.1);
+		tmp_data[uint2(index, 11 + BLOCK_OFFSET)] = gCurNoisy[uv].y / (albedo[uv].y + 0.1);
+		tmp_data[uint2(index, 12 + BLOCK_OFFSET)] = gCurNoisy[uv].z / (albedo[uv].z + 0.1);
 	}
 	GroupMemoryBarrierWithGroupSync();
 
@@ -350,6 +350,6 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 			bchannal += rmat[col][FEATURES_COUNT + 2] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
         }
 		bchannal = bchannal < 0 ? 0 : bchannal;
-		gCurNoisy[uv] = albedo[uv] * float4(rchannal, gchannal, bchannal, gCurNoisy[uv].w);
+		gCurNoisy[uv] = (albedo[uv] + 0.1f) * float4(rchannal, gchannal, bchannal, gCurNoisy[uv].w);
 	}
 }

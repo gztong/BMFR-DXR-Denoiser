@@ -65,6 +65,12 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
         prev_frame_pos.x = (prev_frame_pos.x + 1.f) / 2.0f;
         prev_frame_pos.y = (1 - prev_frame_pos.y) / 2.0f;
         float2 prev_frame_uv = prev_frame_pos.xy;
+		if (prev_frame_uv.x > 1.0f || prev_frame_uv.x < 0.0f || prev_frame_uv.y > 1.0f || prev_frame_uv.y < 0.0f) {
+			gCurNoisy[pixelPos] = float4(gCurNoisy[pixelPos].xyz, 1.0f);
+			accept_bools[pixelPos] = 0;
+
+			return gCurNoisy[pixelPos];
+		}
 
         // Change to pixel indexes and apply offset
         prev_frame_pixel_f = prev_frame_uv * dim;

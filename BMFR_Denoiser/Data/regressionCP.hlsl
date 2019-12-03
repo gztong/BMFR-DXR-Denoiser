@@ -10,8 +10,8 @@ Texture2D<float4> gCurPos; //world position
 Texture2D<float4> gCurNorm; //world normal
 Texture2D<float4> albedo;
 
-RWTexture2D<float> tmp_data;// pixelCount * (FEATURES_COUNT + color_channels)  
-RWTexture2D<float> out_data;// scaled features and filtered colors
+RWTexture2D<float> tmp_data;// BLOCK_PIXELS * [(FEATURES_COUNT + color_channels) * blocks]  
+RWTexture2D<float> out_data;// where we perform QR decomposition
 RWTexture2D<float4> gCurNoisy; //current noisy image
 
 groupshared float sum_vec[256];
@@ -55,8 +55,6 @@ static const int2 BLOCK_OFFSETS[BLOCK_OFFSETS_COUNT] =
 	int2(-22, -12),
 };
 
-// Simple mirroring of image index if it is out of bounds.
-// NOTE: Works only if index is less than one size out of bounds.
 static inline int mirror(int index, int size)
 {
 	if (index < 0)
@@ -83,7 +81,7 @@ static inline float random(uint a) {
    a = (a+0xfd7046c5) + (a<<3);
    a = (a^0xb55a4f09) ^ (a>>16);
 
-   return float(a) / 4294967296.0;
+   return float(a) / 4294967296.0f;
 }
 
 static inline float add_random(
@@ -108,7 +106,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 		uv += int2(index % BLOCK_EDGE_LENGTH, index / BLOCK_EDGE_LENGTH);
 		uv += BLOCK_OFFSETS[frame_number % BLOCK_OFFSETS_COUNT];
 		uv = mirror2(uv, int2(screen_width, screen_height));
-		tmp_data[uint2(index, 0 + BLOCK_OFFSET)] = 1;
+		tmp_data[uint2(index, 0 + BLOCK_OFFSET)] = 1.0f;
         tmp_data[uint2(index, 1 + BLOCK_OFFSET)] = gCurNorm[uv].x;
         tmp_data[uint2(index, 2 + BLOCK_OFFSET)] = gCurNorm[uv].y;
         tmp_data[uint2(index, 3 + BLOCK_OFFSET)] = gCurNorm[uv].z;
@@ -118,9 +116,9 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
         tmp_data[uint2(index, 7 + BLOCK_OFFSET)] = gCurPos[uv].x * gCurPos[uv].x;
         tmp_data[uint2(index, 8 + BLOCK_OFFSET)] = gCurPos[uv].y * gCurPos[uv].y;
         tmp_data[uint2(index, 9 + BLOCK_OFFSET)] = gCurPos[uv].z * gCurPos[uv].z;
-		tmp_data[uint2(index, 10 + BLOCK_OFFSET)] = gCurNoisy[uv].x / (albedo[uv].x + 0.1);
-		tmp_data[uint2(index, 11 + BLOCK_OFFSET)] = gCurNoisy[uv].y / (albedo[uv].y + 0.1);
-		tmp_data[uint2(index, 12 + BLOCK_OFFSET)] = gCurNoisy[uv].z / (albedo[uv].z + 0.1);
+		tmp_data[uint2(index, 10 + BLOCK_OFFSET)] = albedo[uv].x < 0.01f ? 0.0f : gCurNoisy[uv].x / albedo[uv].x;
+		tmp_data[uint2(index, 11 + BLOCK_OFFSET)] = albedo[uv].y < 0.01f ? 0.0f : gCurNoisy[uv].y / albedo[uv].y;
+		tmp_data[uint2(index, 12 + BLOCK_OFFSET)] = albedo[uv].z < 0.01f ? 0.0f : gCurNoisy[uv].z / albedo[uv].z;
 	}
 	GroupMemoryBarrierWithGroupSync();
 
@@ -176,7 +174,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 		GroupMemoryBarrierWithGroupSync();
 
         // normalize feature
-        if(block_max - block_min > 1) {
+        if(block_max - block_min > 1.0f) {
             for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
 				out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = (tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] - block_min) / (block_max - block_min);
                 tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)];
@@ -253,7 +251,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 
         for(int feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
             float tmp_data_private_cache[BLOCK_PIXELS / LOCAL_SIZE];
-            float tmp_sum_value = 0;
+            float tmp_sum_value = 0.0f;
             for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
                 int index = INBLOCK_ID;
                 if(index >= col) {
@@ -290,7 +288,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
                 int index = INBLOCK_ID;
                 if (index >= col) {
                     out_data[uint2(index, feature_buffer + BLOCK_OFFSET)] = tmp_data_private_cache[sub_vector]
-                                                                - 2 * uVec[index] * dotV / u_length_squared;
+                                                                - 2.0f * uVec[index] * dotV / u_length_squared;
                 }
             }
             GroupMemoryBarrierWithGroupSync();
@@ -333,23 +331,23 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 			continue;
 		}
 
-		float rchannal = 0;
+		float rchannal = 0.0f;
         for(int col = 0; col < FEATURES_COUNT; col++) {
 			rchannal += rmat[col][FEATURES_COUNT] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
         }
-		rchannal = rchannal < 0 ? 0 : rchannal;
+		rchannal = rchannal < 0.0f ? 0.0f : rchannal;
 
-		float gchannal = 0;
+		float gchannal = 0.0f;
         for(int col = 0; col < FEATURES_COUNT; col++) {
 			gchannal += rmat[col][FEATURES_COUNT + 1] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
         }
-		gchannal = gchannal < 0 ? 0 : gchannal;
+		gchannal = gchannal < 0.0f ? 0.0f : gchannal;
 
-		float bchannal = 0;
+		float bchannal = 0.0f;
         for(int col = 0; col < FEATURES_COUNT; col++) {
 			bchannal += rmat[col][FEATURES_COUNT + 2] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
         }
-		bchannal = bchannal < 0 ? 0 : bchannal;
-		gCurNoisy[uv] = (albedo[uv] + 0.1f) * float4(rchannal, gchannal, bchannal, gCurNoisy[uv].w);
+		bchannal = bchannal < 0.0f ? 0.0f : bchannal;
+		gCurNoisy[uv] = albedo[uv] * float4(rchannal, gchannal, bchannal, gCurNoisy[uv].w);
 	}
 }

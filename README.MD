@@ -40,7 +40,7 @@ We will introduce each stage in detail with the result image in next section
 
 #### Path Tracer and Feature Buffers
 
-![](Images/path_tracer_concept.PNG)
+![](Images/path_tracer_concept.png)
 
 Path Tracing is a computer graphics Monte Carlo method of rendering images of three-dimensional scenes such that the global illumination is faithful to reality. Generally speaking, a path tracer shoots multiple rays from each pixel, which would interact with all the objects within the scene and based on the materials of each object, shoot subordinate rays from the intersection points. If the ray hits an emission surface(light source), the surface of the object it intersects with will be illuminated. The process is very similar to the one our eye proceeds the physical world, but in the opposite direction.
 
@@ -112,19 +112,19 @@ Here is a gif to show the live demo of turning on regression(bmfr) and not turn 
 
 **Arcade**
 
-![](Images/Arcade.PNG)
+![](Images/Arcade.png)
 
 **Coffee shop** (http://developer.nvidia.com/orca/amazon-lumberyard-bistro)
 
-![](Images/coffee_shop.png)
+![](Images/coffee_shop.PNG)
 
 **Street**(http://developer.nvidia.com/orca/amazon-lumberyard-bistro)
 
-![](Images/street.png)
+![](Images/street.PNG)
 
 **Temple** (https://developer.nvidia.com/ue4-sun-temple)
 
-![](Images/temple.png)
+![](Images/temple.PNG)
 
 ### How to Build and Run
 

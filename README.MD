@@ -112,7 +112,7 @@ Here is a gif to show the live demo of turning on regression(bmfr) and not turn 
 
 **Arcade**
 
-![](Images/arcade.png)
+![](Images/arcade.PNG)
 
 **Coffee shop** (http://developer.nvidia.com/orca/amazon-lumberyard-bistro)
 

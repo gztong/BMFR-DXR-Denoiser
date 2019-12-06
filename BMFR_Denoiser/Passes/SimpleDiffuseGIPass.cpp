@@ -67,6 +67,11 @@ bool SimpleDiffuseGIPass::initialize(RenderContext* pRenderContext, ResourceMana
     return true;
 }
 
+bool SimpleDiffuseGIPass::initialize(RenderContext * pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height)
+{
+    return initialize(pRenderContext, pResManager);
+}
+
 void SimpleDiffuseGIPass::initScene(RenderContext* pRenderContext, Scene::SharedPtr pScene)
 {
 	// Stash a copy of the scene and pass it to our ray tracer (if initialized)

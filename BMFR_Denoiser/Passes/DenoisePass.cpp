@@ -70,6 +70,61 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	return true;
 }
 
+bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext * pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height)
+{
+    if (!pResManager) return false;
+
+    // Stash our resource manager; ask for the texture the developer asked us to accumulate
+    mpResManager = pResManager;
+    mpResManager->requestTextureResource(mDenoiseChannel); //current frame image
+    mpResManager->requestTextureResources({ "WorldPosition", "WorldNormal", "MaterialDiffuse" }); //three feature buffers
+
+    mpResManager->requestTextureResource("BMFR_PrevNorm");
+    mpResManager->requestTextureResource("BMFR_PrevPos");
+    mpResManager->requestTextureResource("BMFR_PrevNoisy");
+    mpResManager->requestTextureResource("BMFR_PrevFiltered");
+
+    mpResManager->requestTextureResource("BMFR_CurNorm");
+    mpResManager->requestTextureResource("BMFR_CurPos");
+    //mpResManager->requestTextureResource(mDenoiseChannel); //current frame image
+
+    mpResManager->requestTextureResource("BMFR_AcceptedBools", ResourceFormat::R32Uint);
+    mpResManager->requestTextureResource("BMFR_PrevFramePixel", ResourceFormat::RG16Float);
+
+    mpResManager->requestTextureResource("BMFR_Output");
+
+    int blockWidth, blockHeight;
+    blockWidth = (width + 31) / 32; // 32 is block edge length
+    blockHeight = (height + 31) / 32;
+    int w = blockWidth + 1;
+    int h = blockHeight + 1;
+    w /= 2;
+    mpResManager->requestTextureResource("tmp_data", ResourceFormat::R32Float, ResourceManager::kDefaultFlags, 1024, w * h * 13);//change texture size if change blocksize and features num
+    mpResManager->requestTextureResource("out_data", ResourceFormat::R32Float, ResourceManager::kDefaultFlags, 1024, w * h * 13);//change texture size if change blocksize and features num
+
+
+    //UnorderedAccessView::SharedPtr uavView = UnorderedAccessView::create(1,0,);
+
+    // Create our graphics state and accumulation shader
+    mpGfxState = GraphicsState::create();
+
+    // mpDenoiseShader = FullscreenLaunch::create(kDenoiseFragShader);
+    mpPreprocessShader = FullscreenLaunch::create(kAccumNoisyDataShader);
+    mpRegression = ComputeProgram::createFromFile("regressionCP.hlsl", "fit");
+    mpPostShader = FullscreenLaunch::create(kAccumFilteredDataShader);
+    mpCPState = ComputeState::create();
+    mpCPState->setProgram(mpRegression);
+    mpRegressionVars = ComputeVars::create(mpRegression->getReflector());
+
+    ConstantBuffer::SharedPtr pCB = ConstantBuffer::create((Program::SharedPtr)mpRegression, "PerFrameCB", 128/* 4 * 32 */);
+    mpRegressionVars->setConstantBuffer("PerFrameCB", pCB);
+    // Our GUI needs less space than other passes, so shrink the GUI window.
+    setGuiSize(ivec2(250, 135));
+
+
+    return true;
+}
+
 void BlockwiseMultiOrderFeatureRegression::initScene(RenderContext* pRenderContext, Scene::SharedPtr pScene)
 {
 	// When our renderer moves around, we want to reset accumulation

@@ -45,6 +45,9 @@ void RenderingPipeline::onLoad(SampleCallbacks* pSample, const RenderContext::Sh
 	// Give the GUI some heft, so we don't need to resize all the time
 	pSample->setDefaultGuiSize(300, 800);
 
+    //Get the default height and width of current application
+    uint defaultWidth = pSample->getWindow()->getClientAreaWidth();
+    uint defaultWeight = pSample->getWindow()->getClientAreaHeight();
 	// Create our resource manager
 	mpResourceManager = ResourceManager::create(mLastKnownSize.x, mLastKnownSize.y, pSample);
 	mOutputBufferIndex = mpResourceManager->requestTextureResource(ResourceManager::kOutputChannel);
@@ -55,7 +58,7 @@ void RenderingPipeline::onLoad(SampleCallbacks* pSample, const RenderContext::Sh
 		if (mAvailPasses[i])
 		{
 			// Initialize.  If failure, remove this pass from the list.
-			bool initialized = mAvailPasses[i]->onInitialize(pRenderContext.get(), mpResourceManager);
+			bool initialized = mAvailPasses[i]->onInitialize(pRenderContext.get(), mpResourceManager, defaultWidth, defaultWeight);
 			if (!initialized) mAvailPasses[i] = nullptr;
 		}
 	}

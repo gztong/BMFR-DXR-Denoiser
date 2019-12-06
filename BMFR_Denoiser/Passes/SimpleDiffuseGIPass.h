@@ -40,6 +40,7 @@ protected:
 
     // Implementation of RenderPass interface
     bool initialize(RenderContext* pRenderContext, ResourceManager::SharedPtr pResManager) override;
+    bool initialize(RenderContext* pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height) override;
     void initScene(RenderContext* pRenderContext, Scene::SharedPtr pScene) override;
     void execute(RenderContext* pRenderContext) override;
 	void renderGui(Gui* pGui) override;

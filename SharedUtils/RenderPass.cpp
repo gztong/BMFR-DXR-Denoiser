@@ -30,6 +30,13 @@ bool ::RenderPass::onInitialize(RenderContext* pRenderContext, ResourceManager::
     return mIsInitialized;
 }
 
+bool ::RenderPass::onInitialize(Falcor::RenderContext * pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height)
+{
+    assert(!mIsInitialized);
+    mIsInitialized = initialize(pRenderContext, pResManager, width, height);
+    return mIsInitialized;
+}
+
 void ::RenderPass::onRenderGui(Gui* pGui)
 {
     // Record current UI pos/size

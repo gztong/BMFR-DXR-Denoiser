@@ -40,9 +40,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 	//apply the denoise BMFR method on the image
 	pipeline->setPass(2, BlockwiseMultiOrderFeatureRegression::create(ResourceManager::kOutputChannel));
 
-	//post process stage: temporarl accumulation and temporaral antialiasing -- need to add motion feature
-	pipeline->setPass(3, SimpleAccumulationPass::create(ResourceManager::kOutputChannel));
-
 	// Define a set of config / window parameters for our program
 	SampleConfig config;
 	config.windowDesc.title = "BMFR denoiser demo";

@@ -52,11 +52,15 @@ Here, we need to thank NVIDIA for their [Falcor](https://developer.nvidia.com/fa
 
 
 
-#### Pre-process
+#### Pre-process (accumulate noisy data)
 
 ![](Images/pre_process_pic.PNG)
 
-The core part of pre-process stage is the **temporal accumulation** of the noisy 1 spp data, which reprojects the previous accumulated data to the new camera frame. While we do the temporal accumulation, we need to test whether a specific pixel in previous frame is still within our view in the current frame. If so, we will accumulate the previous pixel's color to its position in the current frame. Otherwise, we will discard the pixel's previous color and fall back to the current frame's result completely. We don't just average the result, instead, we put more weight on the current frame's result. The ratio of previous data and current frame result is 8 : 2, causing the result to be more depending on the current frame.
+The core part of pre-process stage is the **temporal accumulation** of the noisy 1 spp data.
+
+We are trying to reuse the data from previous frames as much as possible by finding the corresponding world position/normal of the same pixels through reprojection given the current and previous camera View_Projection matrix. If we failed to find the corresponding pixels due to the mismatch, or the pixel is out of bound, we reject it and adjust the blend alpha of current pixel accordingly. Otherwise, we blend the current frame into the previous ones with a max blend alpha of 0.2. That is, the ratio of previous data and current frame result is 8 : 2, causing the result to be more depending on the current frame.
+
+Compared to naïve temporal accumulation, this approach allows the camera to move while preserving some data from previous frame, rather than clear out the entire history and starts from noisy data all over.
 
 Here is a gif to show the live demo of turning on pre-process and not turn-on
 

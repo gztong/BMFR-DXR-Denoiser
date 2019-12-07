@@ -7,9 +7,9 @@
 ### Team member:
 
 - Jiangping Xu
-  - [LinkedIn](https://www.linkedin.com/)
+  - [LinkedIn](https://www.linkedin.com/in/jiangping-xu-365b19134)
 - Gangzheng Tong
-  - [LinkedIn](https://www.linkedin.com/)
+  - [LinkedIn](https://www.linkedin.com/in/gztong)
 - Tianming Xu
   - [LinkedIn](www.linkedin.com/in/tianming-xu-8bb81816a)
 

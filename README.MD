@@ -130,6 +130,26 @@ Here is a gif to show the live demo of turning on regression(bmfr) and not turn 
 
 ![](Images/temple.PNG)
 
+
+
+### Performance
+
+Measured with Windows 10, i7-8750H @ 2.20GHz 16GB, RTX 2070 8GB (personal laptop)
+
+With Falcor default scene
+
+![](Images/Frame_time_Breakdown.png)
+
+
+
+![](Images/Average_FPS.png)
+
+Although the regression stage takes the majority of time, we are still able to achieve real-time performance (70 fps) in the fairly complicated scenes.
+
+------
+
+
+
 ### How to Build and Run
 
 1. Clone

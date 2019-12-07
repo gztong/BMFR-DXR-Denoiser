@@ -58,7 +58,7 @@ Here, we need to thank NVIDIA for their [Falcor](https://developer.nvidia.com/fa
 
 The core part of pre-process stage is the **temporal accumulation** of the noisy 1 spp data.
 
-We are trying to reuse the data from previous frames as much as possible by finding the corresponding world position/normal of the same pixels through reprojection given the current and previous camera View_Projection matrix. If we failed to find the corresponding pixels due to the mismatch, or the pixel is out of bound, we reject it and adjust the blend alpha of current pixel accordingly. Otherwise, we blend the current frame into the previous ones with a max blend alpha of 0.2. That is, the ratio of previous data and current frame result is 8 : 2, causing the result to be more depending on the current frame.
+We are trying to reuse the data from previous frames as much as possible by finding the corresponding world position/normal of the same pixels through reprojection given the current and previous camera View_Projection matrix. If we failed to find the corresponding pixels due to the mismatch, or the pixel is out of bound, we reject it and adjust the blend alpha of current pixel accordingly. Otherwise, we blend the current frame into the previous ones with a minimum blend alpha of 0.2. That is, the ratio of previous data and current frame result is 8 : 2 if a lot of previous pixels accepted, causing the result to be more depending on the current frame.
 
 Compared to naïve temporal accumulation, this approach allows the camera to move while preserving some data from previous frame, rather than clear out the entire history and starts from noisy data all over.
 

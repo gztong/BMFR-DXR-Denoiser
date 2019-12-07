@@ -11,7 +11,7 @@ Texture2D<float4> gPrevNorm; //world normal
 RWTexture2D<float4> gCurNoisy; //current output image
 Texture2D<float4> gPrevNoisy;
 
-RWTexture2D<uint> accept_bools; // is previous sample accepted
+RWTexture2D<uint> accept_bools; // should we accept previous pixel?
 RWTexture2D<float2> out_prev_frame_pixel; // save this for later, avoid calculating again
 
 import ShaderCommon; // Shared shading data structures
@@ -19,22 +19,23 @@ import ShaderCommon; // Shared shading data structures
 #define POSITION_LIMIT_SQUARED 0.01f
 #define NORMAL_LIMIT_SQUARED 1.0f
 #define BLEND_ALPHA 0.2f
+#define PIXEL_OFFSET 0.5f
+
 
 cbuffer PerFrameCB
 {
     uint frame_number;
+    uint IMAGE_WIDTH;
+    uint IMAGE_HEIGHT;
 }
 
 
 float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
 {
     uint2 pixelPos = (uint2) pos.xy;
+    
+    // Denoise only half image for compparison
 	if (texC.x > 0.5) return gCurNoisy[pixelPos];
-
-    uint2 dim;
-    gCurPos.GetDimensions(dim.x, dim.y);
-    uint IMAGE_WIDTH = dim.x;
-    uint IMAGE_HEIGHT = dim.y; // TODO: Optimize this
 
     const int2 pixel = pixelPos;
 
@@ -45,11 +46,11 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
     // Default previous frame pixel is the same pixel
     float2 prev_frame_pixel_f = pos.xy;
 
-	// This is changed to non zero if previous frame is not discarded completely
+	// Change this to non zero if previous frame is not discarded completely
     uint store_accept = 0x00;
 
-    // Blend_alpha 1.f means that only current frame color is used. The value
-    // is changed if sample from previous frame can be used
+    // Blend_alpha 1.f means that only current frame color is used
+    // The value is changed if sample from previous frame can be used
     float blend_alpha = 1.f;
     float3 previous_color = float3(0.f, 0.f, 0.f);
 
@@ -68,19 +69,17 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
 		if (prev_frame_uv.x > 1.0f || prev_frame_uv.x < 0.0f || prev_frame_uv.y > 1.0f || prev_frame_uv.y < 0.0f) {
 			gCurNoisy[pixelPos] = float4(gCurNoisy[pixelPos].xyz, 1.0f);
 			accept_bools[pixelPos] = 0;
-
 			return gCurNoisy[pixelPos];
 		}
 
-        // Change to pixel indexes and apply offset
-        prev_frame_pixel_f = prev_frame_uv * dim;
+        // Change to pixel indices and apply offset
+        prev_frame_pixel_f = prev_frame_uv * uint2(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-        float2 pixel_offset = float2(0.500000, 0.500000); // TODO
-        prev_frame_pixel_f -= float2(pixel_offset.x, 1 - pixel_offset.y);
+        prev_frame_pixel_f -= float2(PIXEL_OFFSET, PIXEL_OFFSET);
 
         int2 prev_frame_pixel = int2(prev_frame_pixel_f);
 
-      // These are needed for the bilinear sampling
+        // These are needed for the bilinear sampling
         int2 offsets[4] =
         {
             int2(0, 0),
@@ -98,13 +97,13 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
         weights[2] = one_minus_prev_pixel_fract.x * prev_pixel_fract.y;
         weights[3] = prev_pixel_fract.x * prev_pixel_fract.y;
         total_weight = 0.f;
-      // Bilinear sampling
+        // Bilinear sampling
         for (int i = 0; i < 4; ++i)
         {
             int2 sample_location = prev_frame_pixel + offsets[i];
-         // Check if previous frame color can be used based on its screen location
+            // Check if previous frame color can be used based on its screen location
             if (sample_location.x >= 0 && sample_location.y >= 0 &&
-					sample_location.x < IMAGE_WIDTH && sample_location.y < IMAGE_HEIGHT)
+				sample_location.x < IMAGE_WIDTH && sample_location.y < IMAGE_HEIGHT)
             {
 				// Fetch previous frame world position
                 float3 prev_world_position = gPrevPos[sample_location].xyz;

@@ -3,7 +3,6 @@
 
 namespace {
 	// Where is our shaders located?  -- we will directly find in the Data folder
-	const char* kDenoiseFragShader = "bmfrDenoise.ps.hlsl";
 	const char* kAccumNoisyDataShader = "preprocess.ps.hlsl";
 	const char* kRegressionShader = "regressionCP.hlsl";
 	const char* kAccumFilteredDataShader = "postprocess.ps.hlsl";
@@ -53,7 +52,6 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext* pRenderCont
 	// Create our graphics state and accumulation shader
 	mpGfxState = GraphicsState::create();
 
-	// mpDenoiseShader = FullscreenLaunch::create(kDenoiseFragShader);
 	mpPreprocessShader = FullscreenLaunch::create(kAccumNoisyDataShader);
 	mpRegression = ComputeProgram::createFromFile("regressionCP.hlsl", "fit");
 	mpPostShader = FullscreenLaunch::create(kAccumFilteredDataShader);
@@ -102,13 +100,9 @@ bool BlockwiseMultiOrderFeatureRegression::initialize(RenderContext * pRenderCon
     mpResManager->requestTextureResource("tmp_data", ResourceFormat::R32Float, ResourceManager::kDefaultFlags, 1024, w * h * 13);//change texture size if change blocksize and features num
     mpResManager->requestTextureResource("out_data", ResourceFormat::R32Float, ResourceManager::kDefaultFlags, 1024, w * h * 13);//change texture size if change blocksize and features num
 
-
-    //UnorderedAccessView::SharedPtr uavView = UnorderedAccessView::create(1,0,);
-
     // Create our graphics state and accumulation shader
     mpGfxState = GraphicsState::create();
 
-    // mpDenoiseShader = FullscreenLaunch::create(kDenoiseFragShader);
     mpPreprocessShader = FullscreenLaunch::create(kAccumNoisyDataShader);
     mpRegression = ComputeProgram::createFromFile("regressionCP.hlsl", "fit");
     mpPostShader = FullscreenLaunch::create(kAccumFilteredDataShader);
@@ -146,9 +140,8 @@ void BlockwiseMultiOrderFeatureRegression::resize(uint32_t width, uint32_t heigh
 void BlockwiseMultiOrderFeatureRegression::clearFbos(RenderContext* pCtx)
 {
 	// Clear our FBOs
-
+	// TODO
 	mNeedFboClear = false;
-
 }
 
 void BlockwiseMultiOrderFeatureRegression::renderGui(Gui* pGui)
@@ -177,10 +170,9 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 
 	if (mNeedFboClear) clearFbos(pRenderContext);
 
-
+	mInputTex.curNoisy = mpResManager->getTexture(mDenoiseChannel);
 	mInputTex.curPos = mpResManager->getTexture("WorldPosition");
 	mInputTex.curNorm = mpResManager->getTexture("WorldNormal");
-	mInputTex.curNoisy = mpResManager->getTexture(mDenoiseChannel);
 
 	mInputTex.prevPos = mpResManager->getTexture("BMFR_PrevPos");
 	mInputTex.prevNorm = mpResManager->getTexture("BMFR_PrevNorm");
@@ -241,10 +233,11 @@ void BlockwiseMultiOrderFeatureRegression::accumulate_noisy_data(RenderContext* 
 
 	// Setup variables for our accumulate_noisy_data pass
 	mpPreprocessShaderVars["PerFrameCB"]["frame_number"] = mAccumCount;
+	mpPreprocessShaderVars["PerFrameCB"]["IMAGE_WIDTH"] = mInputTex.curNoisy->getWidth();
+	mpPreprocessShaderVars["PerFrameCB"]["IMAGE_HEIGHT"] = mInputTex.curNoisy->getHeight();
 
 	// Execute the accumulate_noisy_data pass
 	mpPreprocessShader->execute(pRenderContext, mpGfxState);
-
 }
 
 

@@ -81,12 +81,11 @@
     <None Include="Data\standardShadowRay.hlsli">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Data\bmfrDenoise.ps.hlsl">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="Data\preprocess.ps.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Data\regressionCP.hlsl" />
+    <None Include="Data\postprocess.ps.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Passes">
@@ -101,15 +100,5 @@
     <Filter Include="SharedUtils">
       <UniqueIdentifier>{464e12e5-79ea-494a-a029-94156e713556}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Data\regressionCP.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Data\postprocess.ps.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

@@ -11,7 +11,7 @@
 - Gangzheng Tong
   - [LinkedIn](https://www.linkedin.com/in/gztong)
 - Tianming Xu
-  - [LinkedIn](www.linkedin.com/in/tianming-xu-8bb81816a)
+  - [LinkedIn](https://www.linkedin.com/in/tianming-xu-8bb81816a)
 
 ### Project Goal
 

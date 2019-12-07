@@ -5,7 +5,6 @@ import ShaderCommon; // Shared shading data structures
 #define SECOND_BLEND_ALPHA 0.1f
 
 Texture2D<float4> filtered_frame; // new color from preprocess and filter pass
-
 Texture2D<float4> accumulated_prev_frame; // input
 Texture2D<float4> albedo; // input
 
@@ -90,5 +89,4 @@ float4 main(float2 texC : TEXCOORD, float4 pos : SV_Position) : SV_TARGET0
 	accumulated_frame[pixel] = float4(accumulated_color, 1.f);
 
     return accumulated_frame[pixel];
-
 }

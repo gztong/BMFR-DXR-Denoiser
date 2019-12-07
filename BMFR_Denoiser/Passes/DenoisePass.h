@@ -63,11 +63,9 @@ protected:
 
 		Texture::SharedPtr    accept_bools;
 		Texture::SharedPtr    prevFramePixel;
-
-		Texture::SharedPtr    output;
+		Texture::SharedPtr    accumulated_frame;
 
 	} mInputTex;
-
 
     //determine whether we want to show denoise result or not
     bool                          mDoDenoise = true;
@@ -77,12 +75,10 @@ protected:
 	bool						  mBMFR_addNoise = true;
 
 private:
-	bool mNeedFboClear;
-
-	void clearFbos(RenderContext* pCtx);
 	void accumulate_noisy_data(RenderContext* pRenderContext);
 	void fit_noisy_color(RenderContext* pRenderContext);
 	void accumulate_filtered_data(RenderContext* pRenderContext);
+
 	// How many frames have we accumulated so far?
 	uint32_t mAccumCount = 0;
 	int	cbData[4];

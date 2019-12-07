@@ -73,6 +73,7 @@ protected:
 	bool                          mBMFR_preprocess = true;
 	bool                          mBMFR_postprocess = true;
 	bool                          mBMFR_regression = true;
+	bool						  mBMFR_addNoise = true;
 
 private:
 	bool mNeedFboClear;

@@ -202,13 +202,15 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
     GroupMemoryBarrierWithGroupSync();
 
     // Householder QR decomposition
+#ifdef IGNORE_LD_fEATURES
+	int limit = 0;
     for(int col = 0; col < FEATURES_COUNT; col++) {
         float tmp_sum_value = 0;
         for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
 			int index = INBLOCK_ID;
             float tmp = out_data[uint2(index, col + BLOCK_OFFSET)];
             uVec[index] = tmp;
-            if(index >= col + 1) {
+            if(index >= limit + 1) {
                 tmp_sum_value += tmp * tmp;
             }
         }
@@ -234,31 +236,41 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
         GroupMemoryBarrierWithGroupSync();
    
         float r_value;
-        if(groupThreadId.x < col) {
+        if(groupThreadId.x < limit) {
             r_value = uVec[groupThreadId.x];
-        } else if(groupThreadId.x == col) {
+        } else if(groupThreadId.x == limit) {
 			u_length_squared = vec_length;
-			vec_length = sqrt(vec_length + uVec[col] * uVec[col]);
-			uVec[col] -= vec_length;
-			u_length_squared += uVec[col] * uVec[col];
+			vec_length = sqrt(vec_length + uVec[limit] * uVec[limit]);
+			uVec[limit] -= vec_length;
+			u_length_squared += uVec[limit] * uVec[limit];
 			r_value = vec_length;
-        } else if(groupThreadId.x > col) { 
+        } else if(groupThreadId.x > limit) {
             r_value = 0;
         }
 
-        if(groupThreadId.x < FEATURES_COUNT)
-            rmat[groupThreadId.x][col] = r_value;
+		GroupMemoryBarrierWithGroupSync();
+		if (vec_length > 0.01f) {
+			limit++;
+			if (groupThreadId.x < FEATURES_COUNT)
+				rmat[groupThreadId.x][col] = r_value;
+		}
+		else {
+			if (groupThreadId.x < FEATURES_COUNT)
+				rmat[groupThreadId.x][col] = 0.0f;
+			continue;
+		}
+
+		if (u_length_squared < 0.001f) {
+			continue;
+		}
 
         for(int feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
             float tmp_data_private_cache[BLOCK_PIXELS / LOCAL_SIZE];
             float tmp_sum_value = 0.0f;
             for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
                 int index = INBLOCK_ID;
-                if(index >= col) {
+                if(index >= limit - 1) {
                     float tmp = out_data[uint2(index, feature_buffer + BLOCK_OFFSET)];
-                    if(col == 0 && feature_buffer < FEATURES_COUNT) {
-                        tmp = add_random(tmp, groupThreadId.x, sub_vector, feature_buffer, frame_number);
-                    }
                     tmp_data_private_cache[sub_vector] = tmp;
                     tmp_sum_value += tmp * uVec[index];
                 }
@@ -286,7 +298,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 
             for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
                 int index = INBLOCK_ID;
-                if (index >= col) {
+                if (index >= limit - 1) {
                     out_data[uint2(index, feature_buffer + BLOCK_OFFSET)] = tmp_data_private_cache[sub_vector]
                                                                 - 2.0f * uVec[index] * dotV / u_length_squared;
                 }
@@ -307,18 +319,150 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 
     
     // Back substitution
+	limit--;
     for(int i = BUFFER_COUNT - 4; i >= 0; i--) {
-        if(groupThreadId.x < 3) {
-			rmat[i][BUFFER_COUNT - groupThreadId.x - 1] /=  rmat[i][i];
-        }
-        GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 3 * i) {
-            uint rowId = i - groupThreadId.x / 3 - 1;
+		if (rmat[limit][i] != 0.0f) {
+			if (groupThreadId.x < 3) {
+				rmat[i][BUFFER_COUNT - groupThreadId.x - 1] = rmat[limit][BUFFER_COUNT - groupThreadId.x - 1] / rmat[limit][i];
+			}
+			limit--;
+		}
+		else {
+			if (groupThreadId.x < 3) {
+				rmat[i][BUFFER_COUNT - groupThreadId.x - 1] = 0.0f;
+			}
+		}
+		GroupMemoryBarrierWithGroupSync();
+        if(groupThreadId.x < 3 * limit + 3) {
+            uint rowId = limit - groupThreadId.x / 3;
             uint channel = BUFFER_COUNT - (groupThreadId.x % 3) - 1;
             rmat[rowId][channel] -= rmat[i][channel] * rmat[rowId][i];
         }
         GroupMemoryBarrierWithGroupSync();
     }
+#else
+	for (int col = 0; col < FEATURES_COUNT; col++) {
+		float tmp_sum_value = 0;
+		for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+			int index = INBLOCK_ID;
+			float tmp = out_data[uint2(index, col + BLOCK_OFFSET)];
+			uVec[index] = tmp;
+			if (index >= col + 1) {
+				tmp_sum_value += tmp * tmp;
+			}
+		}
+		sum_vec[groupThreadId.x] = tmp_sum_value;
+		GroupMemoryBarrierWithGroupSync();
+
+		// parallel reduction sum
+		if (groupThreadId.x < 128) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 128];
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x < 64) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 64];
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x < 32) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 32];
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x < 16) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 16];
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x < 8) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 8];
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x < 4) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 4];
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x < 2) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 2];
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x == 0) vec_length = sum_vec[0] + sum_vec[1];
+		GroupMemoryBarrierWithGroupSync();
+
+		float r_value;
+		if (groupThreadId.x < col) {
+			r_value = uVec[groupThreadId.x];
+		}
+		else if (groupThreadId.x == col) {
+			u_length_squared = vec_length;
+			vec_length = sqrt(vec_length + uVec[col] * uVec[col]);
+			uVec[col] -= vec_length;
+			u_length_squared += uVec[col] * uVec[col];
+			r_value = vec_length;
+		}
+		else if (groupThreadId.x > col) {
+			r_value = 0;
+		}
+
+		if (groupThreadId.x < FEATURES_COUNT)
+			rmat[groupThreadId.x][col] = r_value;
+
+		for (int feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
+			float tmp_data_private_cache[BLOCK_PIXELS / LOCAL_SIZE];
+			float tmp_sum_value = 0.0f;
+			for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+				int index = INBLOCK_ID;
+				if (index >= col) {
+					float tmp = out_data[uint2(index, feature_buffer + BLOCK_OFFSET)];
+					if (col == 0 && feature_buffer < FEATURES_COUNT) {
+						tmp = add_random(tmp, groupThreadId.x, sub_vector, feature_buffer, frame_number);
+					}
+					tmp_data_private_cache[sub_vector] = tmp;
+					tmp_sum_value += tmp * uVec[index];
+				}
+			}
+
+			sum_vec[groupThreadId.x] = tmp_sum_value;
+			GroupMemoryBarrierWithGroupSync();
+			// parallel reduction sum
+			if (groupThreadId.x < 128) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 128];
+			GroupMemoryBarrierWithGroupSync();
+			if (groupThreadId.x < 64) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 64];
+			GroupMemoryBarrierWithGroupSync();
+			if (groupThreadId.x < 32) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 32];
+			GroupMemoryBarrierWithGroupSync();
+			if (groupThreadId.x < 16) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 16];
+			GroupMemoryBarrierWithGroupSync();
+			if (groupThreadId.x < 8) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 8];
+			GroupMemoryBarrierWithGroupSync();
+			if (groupThreadId.x < 4) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 4];
+			GroupMemoryBarrierWithGroupSync();
+			if (groupThreadId.x < 2) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 2];
+			GroupMemoryBarrierWithGroupSync();
+			if (groupThreadId.x == 0) dotV = sum_vec[0] + sum_vec[1];
+			GroupMemoryBarrierWithGroupSync();
+
+			for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+				int index = INBLOCK_ID;
+				if (index >= col) {
+					out_data[uint2(index, feature_buffer + BLOCK_OFFSET)] = tmp_data_private_cache[sub_vector]
+						- 2.0f * uVec[index] * dotV / u_length_squared;
+				}
+			}
+			GroupMemoryBarrierWithGroupSync();
+		}
+	}
+
+	uint tmpId;
+	if (groupThreadId.x < FEATURES_COUNT) {
+		rmat[groupThreadId.x][FEATURES_COUNT] = out_data[uint2(groupThreadId.x, FEATURES_COUNT + BLOCK_OFFSET)];
+	}
+	else if ((tmpId = groupThreadId.x - FEATURES_COUNT) < FEATURES_COUNT) {
+		rmat[tmpId][BUFFER_COUNT - 2] = out_data[uint2(tmpId, BUFFER_COUNT - 2 + BLOCK_OFFSET)];
+	}
+	else if ((tmpId = tmpId - FEATURES_COUNT) < FEATURES_COUNT) {
+		rmat[tmpId][BUFFER_COUNT - 1] = out_data[uint2(tmpId, BUFFER_COUNT - 1 + BLOCK_OFFSET)];
+	}
+	GroupMemoryBarrierWithGroupSync();
+
+
+	// Back substitution
+	for (int i = BUFFER_COUNT - 4; i >= 0; i--) {
+		if (groupThreadId.x < 3) {
+			rmat[i][BUFFER_COUNT - groupThreadId.x - 1] /= rmat[i][i];
+		}
+		GroupMemoryBarrierWithGroupSync();
+		if (groupThreadId.x < 3 * i) {
+			uint rowId = i - groupThreadId.x / 3 - 1;
+			uint channel = BUFFER_COUNT - (groupThreadId.x % 3) - 1;
+			rmat[rowId][channel] -= rmat[i][channel] * rmat[rowId][i];
+		}
+		GroupMemoryBarrierWithGroupSync();
+	}
+#endif
 	
     // calculate filtered color
     for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
@@ -348,6 +492,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 			bchannal += rmat[col][FEATURES_COUNT + 2] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
         }
 		bchannal = bchannal < 0.0f ? 0.0f : bchannal;
+
 		gCurNoisy[uv] = albedo[uv] * float4(rchannal, gchannal, bchannal, gCurNoisy[uv].w);
 	}
 }

@@ -103,6 +103,7 @@ void BlockwiseMultiOrderFeatureRegression::renderGui(Gui* pGui)
 	dirty |= (int)pGui->addCheckBox(mBMFR_preprocess ? "Do Pre-Process" : "Skip Pre-process", mBMFR_preprocess);
 	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Post-Process" : "Skip Post-process", mBMFR_postprocess);
 	dirty |= (int)pGui->addCheckBox(mBMFR_regression ? "Do Regression" : "Skip Regression", mBMFR_regression);
+	dirty |= (int)pGui->addCheckBox(mBMFR_addNoise ? "Add Noise" : "Ignore features", mBMFR_addNoise);
 
 	if (dirty) setRefreshFlag();
 }
@@ -218,6 +219,13 @@ void BlockwiseMultiOrderFeatureRegression::fit_noisy_color(RenderContext* pRende
 	mpRegressionVars->setTexture("out_data", mInputTex.out_data);
 	mpRegressionVars->setTexture("gCurNoisy", mInputTex.curNoisy);
 	mpRegressionVars->setTexture("albedo", mpResManager->getTexture("MaterialDiffuse"));
+
+	if (!mBMFR_addNoise) {
+		mpRegression->addDefine("IGNORE_LD_fEATURES");
+	}
+	else {
+		mpRegression->removeDefine("IGNORE_LD_fEATURES");
+	}
 
 	// Setup constant buffer
 	ConstantBuffer::SharedPtr pcb = mpRegressionVars->getConstantBuffer("PerFrameCB");

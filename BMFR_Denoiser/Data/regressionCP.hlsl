@@ -1,6 +1,6 @@
 cbuffer PerFrameCB
 {
-    int frame_number;
+    uint frame_number;
 	int screen_width;
 	int screen_height;
 	int horizental_blocks_count;
@@ -99,8 +99,8 @@ static inline float add_random(
 void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 {
 	// load features and colors to tmp_data
-	for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
-		int index = INBLOCK_ID;
+	for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+		uint index = INBLOCK_ID;
 		int2 uv = int2(groupId.x % horizental_blocks_count, groupId.x / horizental_blocks_count);
 		uv *= BLOCK_EDGE_LENGTH;
 		uv += int2(index % BLOCK_EDGE_LENGTH, index / BLOCK_EDGE_LENGTH);
@@ -123,7 +123,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 	GroupMemoryBarrierWithGroupSync();
 
     for(int feature_buffer = FEATURES_NOT_SCALED; feature_buffer < FEATURES_COUNT; ++feature_buffer) {
-        int sub_vector = 0;
+        uint sub_vector = 0;
         float tmp_max = tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)];
         float tmp_min = tmp_max;
         for(++sub_vector; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
@@ -175,12 +175,12 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 
         // normalize feature
         if(block_max - block_min > 1.0f) {
-            for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+            for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
 				out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = (tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] - block_min) / (block_max - block_min);
                 tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)];
             }
         } else {
-            for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+            for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
                 out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] - block_min;
                 tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)];
             }
@@ -188,14 +188,14 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
     }
 
     // copy noise colors to out
-    for(int feature_buffer = FEATURES_COUNT; feature_buffer < BUFFER_COUNT; ++feature_buffer) {
-        for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+    for(uint feature_buffer = FEATURES_COUNT; feature_buffer < BUFFER_COUNT; ++feature_buffer) {
+        for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
             out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)];
         }
     }
     // copy not scaled features to out
-    for(int feature_buffer = 0; feature_buffer < FEATURES_NOT_SCALED; ++feature_buffer) {
-        for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+    for(uint feature_buffer = 0; feature_buffer < FEATURES_NOT_SCALED; ++feature_buffer) {
+        for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
             out_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)] = tmp_data[uint2(INBLOCK_ID, feature_buffer + BLOCK_OFFSET)];
         }
     }
@@ -204,9 +204,9 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
     // Householder QR decomposition
 #ifdef IGNORE_LD_fEATURES
 	int limit = 0;
-    for(int col = 0; col < FEATURES_COUNT; col++) {
+    for(uint col = 0; col < FEATURES_COUNT; col++) {
         float tmp_sum_value = 0;
-        for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+        for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
 			int index = INBLOCK_ID;
             float tmp = out_data[uint2(index, col + BLOCK_OFFSET)];
             uVec[index] = tmp;
@@ -264,10 +264,10 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 			continue;
 		}
 
-        for(int feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
+        for(uint feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
             float tmp_data_private_cache[BLOCK_PIXELS / LOCAL_SIZE];
             float tmp_sum_value = 0.0f;
-            for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+            for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
                 int index = INBLOCK_ID;
                 if(index >= limit - 1) {
                     float tmp = out_data[uint2(index, feature_buffer + BLOCK_OFFSET)];
@@ -296,7 +296,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
             if(groupThreadId.x == 0) dotV = sum_vec[0] + sum_vec[1];
             GroupMemoryBarrierWithGroupSync();
 
-            for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+            for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
                 int index = INBLOCK_ID;
                 if (index >= limit - 1) {
                     out_data[uint2(index, feature_buffer + BLOCK_OFFSET)] = tmp_data_private_cache[sub_vector]
@@ -341,9 +341,9 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
         GroupMemoryBarrierWithGroupSync();
     }
 #else
-	for (int col = 0; col < FEATURES_COUNT; col++) {
+	for (uint col = 0; col < FEATURES_COUNT; col++) {
 		float tmp_sum_value = 0;
-		for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+		for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
 			int index = INBLOCK_ID;
 			float tmp = out_data[uint2(index, col + BLOCK_OFFSET)];
 			uVec[index] = tmp;
@@ -390,10 +390,10 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 		if (groupThreadId.x < FEATURES_COUNT)
 			rmat[groupThreadId.x][col] = r_value;
 
-		for (int feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
+		for (uint feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
 			float tmp_data_private_cache[BLOCK_PIXELS / LOCAL_SIZE];
 			float tmp_sum_value = 0.0f;
-			for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+			for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
 				int index = INBLOCK_ID;
 				if (index >= col) {
 					float tmp = out_data[uint2(index, feature_buffer + BLOCK_OFFSET)];
@@ -425,7 +425,7 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 			if (groupThreadId.x == 0) dotV = sum_vec[0] + sum_vec[1];
 			GroupMemoryBarrierWithGroupSync();
 
-			for (int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+			for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
 				int index = INBLOCK_ID;
 				if (index >= col) {
 					out_data[uint2(index, feature_buffer + BLOCK_OFFSET)] = tmp_data_private_cache[sub_vector]
@@ -465,8 +465,8 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 #endif
 	
     // calculate filtered color
-    for(int sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
-        int index = INBLOCK_ID;
+    for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+        uint index = INBLOCK_ID;
 		int2 uv = int2(groupId.x % horizental_blocks_count, groupId.x / horizental_blocks_count);
 		uv *= BLOCK_EDGE_LENGTH;
 		uv += int2(index % BLOCK_EDGE_LENGTH, index / BLOCK_EDGE_LENGTH);

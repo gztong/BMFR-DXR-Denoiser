@@ -146,9 +146,8 @@ void BlockwiseMultiOrderFeatureRegression::resize(uint32_t width, uint32_t heigh
 void BlockwiseMultiOrderFeatureRegression::clearFbos(RenderContext* pCtx)
 {
 	// Clear our FBOs
-
+	// TODO
 	mNeedFboClear = false;
-
 }
 
 void BlockwiseMultiOrderFeatureRegression::renderGui(Gui* pGui)
@@ -177,10 +176,9 @@ void BlockwiseMultiOrderFeatureRegression::execute(RenderContext* pRenderContext
 
 	if (mNeedFboClear) clearFbos(pRenderContext);
 
-
+	mInputTex.curNoisy = mpResManager->getTexture(mDenoiseChannel);
 	mInputTex.curPos = mpResManager->getTexture("WorldPosition");
 	mInputTex.curNorm = mpResManager->getTexture("WorldNormal");
-	mInputTex.curNoisy = mpResManager->getTexture(mDenoiseChannel);
 
 	mInputTex.prevPos = mpResManager->getTexture("BMFR_PrevPos");
 	mInputTex.prevNorm = mpResManager->getTexture("BMFR_PrevNorm");
@@ -241,10 +239,11 @@ void BlockwiseMultiOrderFeatureRegression::accumulate_noisy_data(RenderContext* 
 
 	// Setup variables for our accumulate_noisy_data pass
 	mpPreprocessShaderVars["PerFrameCB"]["frame_number"] = mAccumCount;
+	mpPreprocessShaderVars["PerFrameCB"]["IMAGE_WIDTH"] = mInputTex.curNoisy->getWidth();
+	mpPreprocessShaderVars["PerFrameCB"]["IMAGE_HEIGHT"] = mInputTex.curNoisy->getHeight();
 
 	// Execute the accumulate_noisy_data pass
 	mpPreprocessShader->execute(pRenderContext, mpGfxState);
-
 }
 
 

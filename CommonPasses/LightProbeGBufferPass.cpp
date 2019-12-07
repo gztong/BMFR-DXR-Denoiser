@@ -65,6 +65,11 @@ bool LightProbeGBufferPass::initialize(RenderContext* pRenderContext, ResourceMa
     return true;
 }
 
+bool LightProbeGBufferPass::initialize(RenderContext * pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height)
+{
+    return initialize(pRenderContext, pResManager);
+}
+
 void LightProbeGBufferPass::initScene(RenderContext* pRenderContext, Scene::SharedPtr pScene)
 {
 	// Stash a copy of the scene and pass it to our ray tracer (if initialized)

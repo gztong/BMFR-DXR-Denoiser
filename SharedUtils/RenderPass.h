@@ -37,6 +37,7 @@ protected:
 	//
 
 	virtual bool initialize(Falcor::RenderContext* pRenderContext, ResourceManager::SharedPtr pResManager) = 0;
+    virtual bool initialize(Falcor::RenderContext* pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height) = 0;
 	virtual void initScene(Falcor::RenderContext* pRenderContext, Falcor::Scene::SharedPtr pScene) {}
 	virtual void resize(uint32_t width, uint32_t height) {}
 	virtual void pipelineUpdated(ResourceManager::SharedPtr pResManager) { mpResManager = pResManager; }
@@ -73,6 +74,9 @@ public:
         \return false if initialization failed, true otherwise.
     */
     bool onInitialize(Falcor::RenderContext* pRenderContext, ResourceManager::SharedPtr pResManager);
+
+    //overload onInitialize to get the width and height of current application
+    bool onInitialize(Falcor::RenderContext* pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height);
 
     /** Callback on scene initialization.
         \param[in] context Provides the current context to initialize resources for your renderer.

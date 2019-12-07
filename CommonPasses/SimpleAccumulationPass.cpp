@@ -46,6 +46,11 @@ bool SimpleAccumulationPass::initialize(RenderContext* pRenderContext, ResourceM
 	return true;
 }
 
+bool SimpleAccumulationPass::initialize(RenderContext * pRenderContext, ResourceManager::SharedPtr pResManager, uint width, uint height)
+{
+    return initialize(pRenderContext, pResManager);
+}
+
 void SimpleAccumulationPass::initScene(RenderContext* pRenderContext, Scene::SharedPtr pScene)
 {
 	// Reset accumulation.

@@ -32,7 +32,7 @@ groupshared float vec_length;
 #define NOISE_AMOUNT 0.01
 #define BLOCK_OFFSETS_COUNT 16
 
-#define INBLOCK_ID sub_vector * LOCAL_SIZE + groupThreadId.x
+#define INBLOCK_ID sub_vector * LOCAL_SIZE + groupThreadId
 #define BLOCK_OFFSET groupId.x * BUFFER_COUNT
 
 static const int2 BLOCK_OFFSETS[BLOCK_OFFSETS_COUNT] =
@@ -96,7 +96,7 @@ static inline float add_random(
 }
 
 [numthreads(256, 1, 1)] // LOCAL_SIZE
-void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
+void fit(uint3 groupId : SV_GroupID, uint groupThreadId : SV_GroupIndex)
 {
 	// load features and colors to tmp_data
 	for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
@@ -131,46 +131,46 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
             tmp_max = max(value, tmp_max);
             tmp_min = min(value, tmp_min);
         }
-        sum_vec[groupThreadId.x] = tmp_max;
+        sum_vec[groupThreadId] = tmp_max;
         GroupMemoryBarrierWithGroupSync();
         
         // parallel reduction find max
-        if(groupThreadId.x < 128) sum_vec[groupThreadId.x] = max(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 128]);
+        if(groupThreadId < 128) sum_vec[groupThreadId] = max(sum_vec[groupThreadId], sum_vec[groupThreadId + 128]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 64) sum_vec[groupThreadId.x] = max(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 64]);
+        if(groupThreadId < 64) sum_vec[groupThreadId] = max(sum_vec[groupThreadId], sum_vec[groupThreadId + 64]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 32) sum_vec[groupThreadId.x] = max(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 32]);
+        if(groupThreadId < 32) sum_vec[groupThreadId] = max(sum_vec[groupThreadId], sum_vec[groupThreadId + 32]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 16) sum_vec[groupThreadId.x] = max(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 16]);
+        if(groupThreadId < 16) sum_vec[groupThreadId] = max(sum_vec[groupThreadId], sum_vec[groupThreadId + 16]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 8) sum_vec[groupThreadId.x] = max(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 8]);
+        if(groupThreadId < 8) sum_vec[groupThreadId] = max(sum_vec[groupThreadId], sum_vec[groupThreadId + 8]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 4) sum_vec[groupThreadId.x] = max(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 4]);
+        if(groupThreadId < 4) sum_vec[groupThreadId] = max(sum_vec[groupThreadId], sum_vec[groupThreadId + 4]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 2) sum_vec[groupThreadId.x] = max(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 2]);
+        if(groupThreadId < 2) sum_vec[groupThreadId] = max(sum_vec[groupThreadId], sum_vec[groupThreadId + 2]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x == 0) block_max = max(sum_vec[0], sum_vec[1]);
+        if(groupThreadId == 0) block_max = max(sum_vec[0], sum_vec[1]);
         GroupMemoryBarrierWithGroupSync();
 
-        sum_vec[groupThreadId.x] = tmp_min;
+        sum_vec[groupThreadId] = tmp_min;
         GroupMemoryBarrierWithGroupSync();
         
         // parallel reduction find min
-        if(groupThreadId.x < 128) sum_vec[groupThreadId.x] = min(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 128]);
+        if(groupThreadId < 128) sum_vec[groupThreadId] = min(sum_vec[groupThreadId], sum_vec[groupThreadId + 128]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 64) sum_vec[groupThreadId.x] = min(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 64]);
+        if(groupThreadId < 64) sum_vec[groupThreadId] = min(sum_vec[groupThreadId], sum_vec[groupThreadId + 64]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 32) sum_vec[groupThreadId.x] = min(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 32]);
+        if(groupThreadId < 32) sum_vec[groupThreadId] = min(sum_vec[groupThreadId], sum_vec[groupThreadId + 32]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 16) sum_vec[groupThreadId.x] = min(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 16]);
+        if(groupThreadId < 16) sum_vec[groupThreadId] = min(sum_vec[groupThreadId], sum_vec[groupThreadId + 16]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 8) sum_vec[groupThreadId.x] = min(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 8]);
+        if(groupThreadId < 8) sum_vec[groupThreadId] = min(sum_vec[groupThreadId], sum_vec[groupThreadId + 8]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 4) sum_vec[groupThreadId.x] = min(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 4]);
+        if(groupThreadId < 4) sum_vec[groupThreadId] = min(sum_vec[groupThreadId], sum_vec[groupThreadId + 4]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 2) sum_vec[groupThreadId.x] = min(sum_vec[groupThreadId.x], sum_vec[groupThreadId.x + 2]);
+        if(groupThreadId < 2) sum_vec[groupThreadId] = min(sum_vec[groupThreadId], sum_vec[groupThreadId + 2]);
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x == 0) block_min = min(sum_vec[0], sum_vec[1]);
+        if(groupThreadId == 0) block_min = min(sum_vec[0], sum_vec[1]);
 		GroupMemoryBarrierWithGroupSync();
 
         // normalize feature
@@ -214,49 +214,49 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
                 tmp_sum_value += tmp * tmp;
             }
         }
-        sum_vec[groupThreadId.x] = tmp_sum_value;
+        sum_vec[groupThreadId] = tmp_sum_value;
         GroupMemoryBarrierWithGroupSync();
 
         // parallel reduction sum
-        if(groupThreadId.x < 128) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 128];
+        if(groupThreadId < 128) sum_vec[groupThreadId] += sum_vec[groupThreadId + 128];
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 64) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 64];
+        if(groupThreadId < 64) sum_vec[groupThreadId] += sum_vec[groupThreadId + 64];
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 32) sum_vec[groupThreadId.x] +=sum_vec[groupThreadId.x + 32];
+        if(groupThreadId < 32) sum_vec[groupThreadId] +=sum_vec[groupThreadId + 32];
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 16) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 16];
+        if(groupThreadId < 16) sum_vec[groupThreadId] += sum_vec[groupThreadId + 16];
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 8) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 8];
+        if(groupThreadId < 8) sum_vec[groupThreadId] += sum_vec[groupThreadId + 8];
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 4) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 4];
+        if(groupThreadId < 4) sum_vec[groupThreadId] += sum_vec[groupThreadId + 4];
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 2) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 2];
+        if(groupThreadId < 2) sum_vec[groupThreadId] += sum_vec[groupThreadId + 2];
         GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x == 0) vec_length = sum_vec[0] + sum_vec[1];
+        if(groupThreadId == 0) vec_length = sum_vec[0] + sum_vec[1];
         GroupMemoryBarrierWithGroupSync();
    
         float r_value;
-        if(groupThreadId.x < limit) {
-            r_value = uVec[groupThreadId.x];
-        } else if(groupThreadId.x == limit) {
+        if(groupThreadId < limit) {
+            r_value = uVec[groupThreadId];
+        } else if(groupThreadId == limit) {
 			u_length_squared = vec_length;
 			vec_length = sqrt(vec_length + uVec[limit] * uVec[limit]);
 			uVec[limit] -= vec_length;
 			u_length_squared += uVec[limit] * uVec[limit];
 			r_value = vec_length;
-        } else if(groupThreadId.x > limit) {
+        } else if(groupThreadId > limit) {
             r_value = 0;
         }
 
 		GroupMemoryBarrierWithGroupSync();
 		if (vec_length > 0.01f) {
 			limit++;
-			if (groupThreadId.x < FEATURES_COUNT)
-				rmat[groupThreadId.x][col] = r_value;
+			if (groupThreadId < FEATURES_COUNT)
+				rmat[groupThreadId][col] = r_value;
 		}
 		else {
-			if (groupThreadId.x < FEATURES_COUNT)
-				rmat[groupThreadId.x][col] = 0.0f;
+			if (groupThreadId < FEATURES_COUNT)
+				rmat[groupThreadId][col] = 0.0f;
 			continue;
 		}
 
@@ -276,24 +276,24 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
                 }
             }
 
-            sum_vec[groupThreadId.x] = tmp_sum_value;
+            sum_vec[groupThreadId] = tmp_sum_value;
             GroupMemoryBarrierWithGroupSync();
             // parallel reduction sum
-            if(groupThreadId.x < 128) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 128];
+            if(groupThreadId < 128) sum_vec[groupThreadId] += sum_vec[groupThreadId + 128];
             GroupMemoryBarrierWithGroupSync();
-            if(groupThreadId.x < 64) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 64];
+            if(groupThreadId < 64) sum_vec[groupThreadId] += sum_vec[groupThreadId + 64];
             GroupMemoryBarrierWithGroupSync();
-            if(groupThreadId.x < 32) sum_vec[groupThreadId.x] +=sum_vec[groupThreadId.x + 32];
+            if(groupThreadId < 32) sum_vec[groupThreadId] +=sum_vec[groupThreadId + 32];
             GroupMemoryBarrierWithGroupSync();
-            if(groupThreadId.x < 16) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 16];
+            if(groupThreadId < 16) sum_vec[groupThreadId] += sum_vec[groupThreadId + 16];
             GroupMemoryBarrierWithGroupSync();
-            if(groupThreadId.x < 8) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 8];
+            if(groupThreadId < 8) sum_vec[groupThreadId] += sum_vec[groupThreadId + 8];
             GroupMemoryBarrierWithGroupSync();
-            if(groupThreadId.x < 4) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 4];
+            if(groupThreadId < 4) sum_vec[groupThreadId] += sum_vec[groupThreadId + 4];
             GroupMemoryBarrierWithGroupSync();
-            if(groupThreadId.x < 2) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 2];
+            if(groupThreadId < 2) sum_vec[groupThreadId] += sum_vec[groupThreadId + 2];
             GroupMemoryBarrierWithGroupSync();
-            if(groupThreadId.x == 0) dotV = sum_vec[0] + sum_vec[1];
+            if(groupThreadId == 0) dotV = sum_vec[0] + sum_vec[1];
             GroupMemoryBarrierWithGroupSync();
 
             for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
@@ -308,9 +308,9 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
     }
 
     uint tmpId;
-    if(groupThreadId.x < FEATURES_COUNT) {
-        rmat[groupThreadId.x][FEATURES_COUNT] = out_data[uint2(groupThreadId.x, FEATURES_COUNT + BLOCK_OFFSET)];
-    } else if((tmpId = groupThreadId.x - FEATURES_COUNT) < FEATURES_COUNT) {
+    if(groupThreadId < FEATURES_COUNT) {
+        rmat[groupThreadId][FEATURES_COUNT] = out_data[uint2(groupThreadId, FEATURES_COUNT + BLOCK_OFFSET)];
+    } else if((tmpId = groupThreadId - FEATURES_COUNT) < FEATURES_COUNT) {
         rmat[tmpId][BUFFER_COUNT - 2] = out_data[uint2(tmpId, BUFFER_COUNT - 2 + BLOCK_OFFSET)];
     } else if((tmpId = tmpId - FEATURES_COUNT) < FEATURES_COUNT) {
         rmat[tmpId][BUFFER_COUNT - 1] = out_data[uint2(tmpId, BUFFER_COUNT - 1 + BLOCK_OFFSET)];
@@ -322,20 +322,20 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 	limit--;
     for(int i = BUFFER_COUNT - 4; i >= 0; i--) {
 		if (rmat[limit][i] != 0.0f) {
-			if (groupThreadId.x < 3) {
-				rmat[i][BUFFER_COUNT - groupThreadId.x - 1] = rmat[limit][BUFFER_COUNT - groupThreadId.x - 1] / rmat[limit][i];
+			if (groupThreadId < 3) {
+				rmat[i][BUFFER_COUNT - groupThreadId - 1] = rmat[limit][BUFFER_COUNT - groupThreadId - 1] / rmat[limit][i];
 			}
 			limit--;
 		}
 		else {
-			if (groupThreadId.x < 3) {
-				rmat[i][BUFFER_COUNT - groupThreadId.x - 1] = 0.0f;
+			if (groupThreadId < 3) {
+				rmat[i][BUFFER_COUNT - groupThreadId - 1] = 0.0f;
 			}
 		}
 		GroupMemoryBarrierWithGroupSync();
-        if(groupThreadId.x < 3 * limit + 3) {
-            uint rowId = limit - groupThreadId.x / 3;
-            uint channel = BUFFER_COUNT - (groupThreadId.x % 3) - 1;
+        if(groupThreadId < 3 * limit + 3) {
+            uint rowId = limit - groupThreadId / 3;
+            uint channel = BUFFER_COUNT - (groupThreadId % 3) - 1;
             rmat[rowId][channel] -= rmat[i][channel] * rmat[rowId][i];
         }
         GroupMemoryBarrierWithGroupSync();
@@ -351,44 +351,44 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 				tmp_sum_value += tmp * tmp;
 			}
 		}
-		sum_vec[groupThreadId.x] = tmp_sum_value;
+		sum_vec[groupThreadId] = tmp_sum_value;
 		GroupMemoryBarrierWithGroupSync();
 
 		// parallel reduction sum
-		if (groupThreadId.x < 128) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 128];
+		if (groupThreadId < 128) sum_vec[groupThreadId] += sum_vec[groupThreadId + 128];
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x < 64) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 64];
+		if (groupThreadId < 64) sum_vec[groupThreadId] += sum_vec[groupThreadId + 64];
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x < 32) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 32];
+		if (groupThreadId < 32) sum_vec[groupThreadId] += sum_vec[groupThreadId + 32];
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x < 16) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 16];
+		if (groupThreadId < 16) sum_vec[groupThreadId] += sum_vec[groupThreadId + 16];
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x < 8) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 8];
+		if (groupThreadId < 8) sum_vec[groupThreadId] += sum_vec[groupThreadId + 8];
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x < 4) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 4];
+		if (groupThreadId < 4) sum_vec[groupThreadId] += sum_vec[groupThreadId + 4];
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x < 2) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 2];
+		if (groupThreadId < 2) sum_vec[groupThreadId] += sum_vec[groupThreadId + 2];
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x == 0) vec_length = sum_vec[0] + sum_vec[1];
+		if (groupThreadId == 0) vec_length = sum_vec[0] + sum_vec[1];
 		GroupMemoryBarrierWithGroupSync();
 
 		float r_value;
-		if (groupThreadId.x < col) {
-			r_value = uVec[groupThreadId.x];
+		if (groupThreadId < col) {
+			r_value = uVec[groupThreadId];
 		}
-		else if (groupThreadId.x == col) {
+		else if (groupThreadId == col) {
 			u_length_squared = vec_length;
 			vec_length = sqrt(vec_length + uVec[col] * uVec[col]);
 			uVec[col] -= vec_length;
 			u_length_squared += uVec[col] * uVec[col];
 			r_value = vec_length;
 		}
-		else if (groupThreadId.x > col) {
+		else if (groupThreadId > col) {
 			r_value = 0;
 		}
 
-		if (groupThreadId.x < FEATURES_COUNT)
-			rmat[groupThreadId.x][col] = r_value;
+		if (groupThreadId < FEATURES_COUNT)
+			rmat[groupThreadId][col] = r_value;
 
 		for (uint feature_buffer = col + 1; feature_buffer < BUFFER_COUNT; feature_buffer++) {
 			float tmp_data_private_cache[BLOCK_PIXELS / LOCAL_SIZE];
@@ -398,31 +398,31 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 				if (index >= col) {
 					float tmp = out_data[uint2(index, feature_buffer + BLOCK_OFFSET)];
 					if (col == 0 && feature_buffer < FEATURES_COUNT) {
-						tmp = add_random(tmp, groupThreadId.x, sub_vector, feature_buffer, frame_number);
+						tmp = add_random(tmp, groupThreadId, sub_vector, feature_buffer, frame_number);
 					}
 					tmp_data_private_cache[sub_vector] = tmp;
 					tmp_sum_value += tmp * uVec[index];
 				}
 			}
 
-			sum_vec[groupThreadId.x] = tmp_sum_value;
+			sum_vec[groupThreadId] = tmp_sum_value;
 			GroupMemoryBarrierWithGroupSync();
 			// parallel reduction sum
-			if (groupThreadId.x < 128) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 128];
+			if (groupThreadId < 128) sum_vec[groupThreadId] += sum_vec[groupThreadId + 128];
 			GroupMemoryBarrierWithGroupSync();
-			if (groupThreadId.x < 64) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 64];
+			if (groupThreadId < 64) sum_vec[groupThreadId] += sum_vec[groupThreadId + 64];
 			GroupMemoryBarrierWithGroupSync();
-			if (groupThreadId.x < 32) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 32];
+			if (groupThreadId < 32) sum_vec[groupThreadId] += sum_vec[groupThreadId + 32];
 			GroupMemoryBarrierWithGroupSync();
-			if (groupThreadId.x < 16) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 16];
+			if (groupThreadId < 16) sum_vec[groupThreadId] += sum_vec[groupThreadId + 16];
 			GroupMemoryBarrierWithGroupSync();
-			if (groupThreadId.x < 8) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 8];
+			if (groupThreadId < 8) sum_vec[groupThreadId] += sum_vec[groupThreadId + 8];
 			GroupMemoryBarrierWithGroupSync();
-			if (groupThreadId.x < 4) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 4];
+			if (groupThreadId < 4) sum_vec[groupThreadId] += sum_vec[groupThreadId + 4];
 			GroupMemoryBarrierWithGroupSync();
-			if (groupThreadId.x < 2) sum_vec[groupThreadId.x] += sum_vec[groupThreadId.x + 2];
+			if (groupThreadId < 2) sum_vec[groupThreadId] += sum_vec[groupThreadId + 2];
 			GroupMemoryBarrierWithGroupSync();
-			if (groupThreadId.x == 0) dotV = sum_vec[0] + sum_vec[1];
+			if (groupThreadId == 0) dotV = sum_vec[0] + sum_vec[1];
 			GroupMemoryBarrierWithGroupSync();
 
 			for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
@@ -437,10 +437,10 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 	}
 
 	uint tmpId;
-	if (groupThreadId.x < FEATURES_COUNT) {
-		rmat[groupThreadId.x][FEATURES_COUNT] = out_data[uint2(groupThreadId.x, FEATURES_COUNT + BLOCK_OFFSET)];
+	if (groupThreadId < FEATURES_COUNT) {
+		rmat[groupThreadId][FEATURES_COUNT] = out_data[uint2(groupThreadId, FEATURES_COUNT + BLOCK_OFFSET)];
 	}
-	else if ((tmpId = groupThreadId.x - FEATURES_COUNT) < FEATURES_COUNT) {
+	else if ((tmpId = groupThreadId - FEATURES_COUNT) < FEATURES_COUNT) {
 		rmat[tmpId][BUFFER_COUNT - 2] = out_data[uint2(tmpId, BUFFER_COUNT - 2 + BLOCK_OFFSET)];
 	}
 	else if ((tmpId = tmpId - FEATURES_COUNT) < FEATURES_COUNT) {
@@ -451,13 +451,13 @@ void fit(uint3 groupId : SV_GroupID, uint3 groupThreadId : SV_GroupThreadId)
 
 	// Back substitution
 	for (int i = BUFFER_COUNT - 4; i >= 0; i--) {
-		if (groupThreadId.x < 3) {
-			rmat[i][BUFFER_COUNT - groupThreadId.x - 1] /= rmat[i][i];
+		if (groupThreadId < 3) {
+			rmat[i][BUFFER_COUNT - groupThreadId - 1] /= rmat[i][i];
 		}
 		GroupMemoryBarrierWithGroupSync();
-		if (groupThreadId.x < 3 * i) {
-			uint rowId = i - groupThreadId.x / 3 - 1;
-			uint channel = BUFFER_COUNT - (groupThreadId.x % 3) - 1;
+		if (groupThreadId < 3 * i) {
+			uint rowId = i - groupThreadId / 3 - 1;
+			uint channel = BUFFER_COUNT - (groupThreadId % 3) - 1;
 			rmat[rowId][channel] -= rmat[i][channel] * rmat[rowId][i];
 		}
 		GroupMemoryBarrierWithGroupSync();

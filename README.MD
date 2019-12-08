@@ -68,7 +68,7 @@ Here is a gif to show the live demo of turning on pre-process and not turn-on
 #### Regression(BMFR)
 In the regression step we fit the noisy data using the features generated from pathtracer. The main task of this step is trying to find a set of weights for each block that minimize the squared error between noisy input and regression result. The least-squares expression can be described as follow, 
 
-![](Images/formula.png)
+![](Images/formula.PNG)
 
 where alpha is the weights we are trying to find, Z is the noisy input, F_m^(gamma_m) is the m-th feature with an order of gamma_m, c denotes the channel (RGB) we are computing, p and q are the pixel coordinates in the current block omega_(i,j). 
  

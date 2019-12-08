@@ -19,28 +19,31 @@ In the current game and file industry, **path tracing** is the best candidate fo
 physically correct pictures. However, the performance bottleneck has limited the usage of path tracing in
 **real-time rendering** field. Given our interest in game industry, which concerns interactive/real-time
 rendering, we want to explore the possibility of real-time path tracing using the denoising method
-introduced recently in *SIGGRAPH Asia 2019: Blockwise Multi-Order Feature Regression* for **Real-Time**
-**Path Tracing Reconstruction** . We also know that the current **Direct3D 12** and **DirectX Ray Tracing(DXR)** are the latest API to render picture using ray-tracing technique. Hence, we want to build up a thorough pipeline in D12 to not only generate 1spp noisy input picture, but also denoise the input picture with feature buffer through the D12 computing shaders, and then generate the high quality processed-picture, recording the performance of that.
+introduced recently in *SIGGRAPH 2019:* [*Blockwise Multi-Order Feature Regression for Real-Time
+Path Tracing Reconstruction*](http://www.tut.fi/vga/publications/Blockwise_Multi-Order_Feature_Regression_for_Real-Time_Path_Tracing_Reconstruction.html) . We also know that the current **Direct3D 12** and **DirectX Ray Tracing(DXR)** are the latest API to render picture using ray-tracing technique. Hence, we want to build up a thorough pipeline in D12 to not only generate 1spp noisy input picture, but also denoise the input picture with feature buffer through the D12 computing shaders, and then generate the high quality processed-picture, recording the performance of that.
 
 ### Overview:
 
-![](Images/pipeline_diagram.PNG)
+<div style="text-align:center">
+    <img src="Images/pipeline_diagram.PNG" />
+</div>
 
-This project is complete **DXR pipeline** that use 1 spp path tracing noisy image and *Blockwise Multi-Order Feature Regression* technique to produce high resolution physically-correct image. There are **five** stages in our pipeline:
+This project is complete **DXR pipeline** that use 1 spp path tracing noisy image and *Blockwise Multi-Order Feature Regression* technique to produce high resolution physically-correct image. There are **four** stages in the pipeline:
 
 1. A basic path tracer produces 1 spp output image and populates necessary feature buffers(normal and world position) based on the 1 spp image
-2. Pre-process the current frame to mix up with previous frames’ data
-3. Apply *Blockwise Multi-Order Feature Regression* on the feature buffers
-4. Post-process the frames’ data by accumulating the current frame’s information in
-5. Apply the computed color to the pixel
+2. Temporal accumulation of the noise image
+3. Operate feature regression on non-overlapping image blocks
+4. Temporal accumulation of the fitted image
 
-We will introduce each stage in detail with the result image in next section
+We almost follow the original pipeline described in the BMFR paper, except for a modification when dealing with rank deficiency, which will be discussed later.
 
 ### Pipeline
 
 #### Path Tracer and Feature Buffers
 
-![](Images/path_tracer_concept.png)
+<div style="text-align:center">
+    <img src="Images/path_tracer_concept.png" />
+</div>
 
 Path Tracing is a computer graphics Monte Carlo method of rendering images of three-dimensional scenes such that the global illumination is faithful to reality. Generally speaking, a path tracer shoots multiple rays from each pixel, which would interact with all the objects within the scene and based on the materials of each object, shoot subordinate rays from the intersection points. If the ray hits an emission surface(light source), the surface of the object it intersects with will be illuminated. The process is very similar to the one our eye proceeds the physical world, but in the opposite direction.
 
@@ -56,27 +59,26 @@ Here, we need to thank NVIDIA for their [Falcor](https://developer.nvidia.com/fa
 
 ![](Images/pre_process_pic.PNG)
 
-The core part of pre-process stage is the **temporal accumulation** of the noisy 1 spp data.
-
-We are trying to reuse the data from previous frames as much as possible by finding the corresponding world position/normal of the same pixels through reprojection given the current and previous camera View_Projection matrix. If we failed to find the corresponding pixels due to the mismatch, or the pixel is out of bound, we reject it and adjust the blend alpha of current pixel accordingly. Otherwise, we blend the current frame into the previous ones with a minimum blend alpha of 0.2. That is, the ratio of previous data and current frame result is 8 : 2 if a lot of previous pixels accepted, causing the result to be more depending on the current frame.
-
-Compared to naïve temporal accumulation, this approach allows the camera to move while preserving some data from previous frame, rather than clear out the entire history and starts from noisy data all over.
+The core part of pre-process stage is the **temporal accumulation** of the noisy 1 spp data. We reproject current frame to the previous camera space, finding the corresponding pixels to accumulate with. World-space positions and normals are used to test whether the matching pixels correspond to the same location in the scene. If the tests pass, we compute a exponential moving average and mix 80% of the previous accumulated data with 20% of the current data. Following the modification made in BMFR, we also record the sample count for each pixel (stored in the alpha channel of color data) and compute a ragular moving average instead of the exponential moving average when the sample count is small (less than 5).
 
 Here is a gif to show the live demo of turning on pre-process and not turn-on
 
-![](Images/preprocess(TAA).gif)
+![](Images/preprocess.gif)
 
 #### Regression(BMFR)
-
-![](Images/regression_pic.PNG)
-
-The Regression step is the main part of our denoise pipeline. The basic idea of BMFR is that we have the input image and several feature buffers populated in previous stage, which we can combine them as a big feature matrix. Since they have the same dimension, we can do that without any conflict. Then the problem can be formulated to a standard least-squares expression with the following formula.
+In the regression step we fit the noisy data using the features generated from pathtracer. The main task of this step is trying to find a set of weights for each block that minimize the squared error between noisy input and regression result. The least-squares expression can be described as follow, 
 
 ![](Images/formula.png)
 
-Since the feature matrix we set up is very big and hard to compute. We use QR factorization to decrease its dimension appropriately. After that, we need to apply stochastic regularization to avoid rank-deficient problem and assure the linear independency. Finally, we calculate the result and substitute it back. 
+where alpha is the weights we are trying to find, Z is the noisy input, F_m^(gamma_m) is the m-th feature with an order of gamma_m, c denotes the channel (RGB) we are computing, p and q are the pixel coordinates in the current block omega_(i,j). 
+ 
+Generally speaking, more features result to higher quality of filtered image,but will require more computation. Given the trade off between speed and quality, the following set of features are used in the pipeline,
 
+ [1, normal_x, normal_y, normal_z, position_x, position_y, position_z, squared_position_x, squared_position_y, squared_position_z]
 
+A [House-holder QR factorization](https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf) is implemented in a compute shader to solve the least-squares problem. After that we calculate the weights by doing a back substitution over the R matrix we get from last step. Sometimes the R matrix is not full-ranked so we can't solve the problem with a unique answer. In the original BMFR paper, a small amount of noise are added to the features to deal with this issue. We also tried another method which gives a better performance in terms of both the speed and the image quality. We will discuss this in later section.
+
+The fiited data may contains block-wise bias resulting from the variance of the input noisy image. The blocks are displaced with a given offset over each frame and then acculumated in the next stage to remove the block-wise artifact.  
 
 Here is a gif to show the live demo of turning on regression(bmfr) and not turn on.
 
@@ -86,19 +88,21 @@ Here is a gif to show the live demo of turning on regression(bmfr) and not turn 
 
 #### Post-Process
 
-If you look at the regression gif above closely, you might see many **blocky artifacts** on it. Those artifacts are cause d by operating the BMFR algorithm on non-overlapping blocks. To reduce the blockiness of the rendered image, we basically do the same process in our pre-process: accumulate the current pixel data with previously stored one. But in the post-process stage, we weigh more on the previous data because it gives us a guide on the basic color of that pixel, while using the current frame more like a modification.
+In this step we accumulate the fitted image with the history fitted result. We can reuse the matches and discards information calculated from pre-process. Currently we don't have the temporal anti-alias in pur pipeline.   
 
+Here is a comparison between with and without post-process turning on.
 
+<div style="text-align:center">
+    <img src="Images/no_post_process.PNG" style="zoom:50%;" />
+    <br>
+    ​Without post-process
+</div> \
 
-Here is a pair of images with and without post-process turning on.
-
-<img src="Images/no_post_process.PNG" style="zoom:50%;" />
-
-​																		Without post-process
-
-<img src="Images/with_post_process.PNG" style="zoom:50%;" />
-
-​																	     With post-process
+<div style="text-align:center">
+    <img src="Images/with_post_process.PNG" style="zoom:50%;" />
+    <br>
+    With post-process
+</div>															     
 
 You can clearly see the image with post-process doesn't have many blocky artifacts between the big red jar and black jar while the one without post-process has obvious blocky artifacts in that area.
 
@@ -106,6 +110,9 @@ Here is a gif to show the live demo of turning on regression(bmfr) and not turn 
 
 ![](Images/postprocessing.gif)
 
+### Modification
+
+The reason why R matrix has rank deficiency is that sometimes the features we use are not linealy independent. For example, when a block of pixels shows the surface of a table, the y coordinates is the same accross the entire block, but we already have a constant feature in the feature set we use. Adding noise will solve this problem, but introduce variance to the result and need extra computation at the same time. A better way is simply ignoring the redundent features. When we doing the House-holder QR factorization, we can tell whether a feature is linearly dependent with other features for free by checking if a feature is already a zero vector before doing the House-holder transformation.        
 
 
 ### Result Presentation

@@ -72,7 +72,7 @@ protected:
 	bool                          mBMFR_preprocess = true;
 	bool                          mBMFR_postprocess = true;
 	bool                          mBMFR_regression = true;
-	bool						  mBMFR_addNoise = true;
+	bool						  mBMFR_removeFeatures = true;
 
 private:
 	void accumulate_noisy_data(RenderContext* pRenderContext);

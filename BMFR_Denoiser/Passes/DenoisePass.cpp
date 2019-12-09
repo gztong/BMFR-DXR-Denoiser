@@ -137,9 +137,9 @@ void BlockwiseMultiOrderFeatureRegression::renderGui(Gui* pGui)
 	int dirty = 0;
 	dirty |= (int)pGui->addCheckBox(mDoDenoise ? "Do BMFR Denoise" : "Ignore the denoise stage", mDoDenoise);
 	dirty |= (int)pGui->addCheckBox(mBMFR_preprocess ? "Do Pre-Process" : "Skip Pre-process", mBMFR_preprocess);
-	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Post-Process" : "Skip Post-process", mBMFR_postprocess);
 	dirty |= (int)pGui->addCheckBox(mBMFR_regression ? "Do Regression" : "Skip Regression", mBMFR_regression);
-	dirty |= (int)pGui->addCheckBox(mBMFR_addNoise ? "Add Noise" : "Ignore features", mBMFR_addNoise);
+	dirty |= (int)pGui->addCheckBox(mBMFR_postprocess ? "Do Post-Process" : "Skip Post-process", mBMFR_postprocess);
+	dirty |= (int)pGui->addCheckBox(mBMFR_removeFeatures ? "Ignore Linearly Dependent Features" : "Add Noise", mBMFR_removeFeatures);
 
 	if (dirty) setRefreshFlag();
 }
@@ -248,11 +248,11 @@ void BlockwiseMultiOrderFeatureRegression::fit_noisy_color(RenderContext* pRende
 	mpRegressionVars->setTexture("gCurNoisy", mInputTex.curNoisy);
 	mpRegressionVars->setTexture("albedo", mpResManager->getTexture("MaterialDiffuse"));
 
-	if (!mBMFR_addNoise) {
-		mpRegression->addDefine("IGNORE_LD_fEATURES");
+	if (!mBMFR_removeFeatures) {
+		mpRegression->removeDefine("IGNORE_LD_fEATURES");
 	}
 	else {
-		mpRegression->removeDefine("IGNORE_LD_fEATURES");
+		mpRegression->addDefine("IGNORE_LD_fEATURES");
 	}
 
 	// Setup constant buffer

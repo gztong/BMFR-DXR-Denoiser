@@ -96,7 +96,7 @@ Here is a comparison between with and without post-process turning on.
     <img src="Images/no_post_process.PNG" style="zoom:50%;" />
     <br>
     ​Without post-process
-</div> \
+</div>
 
 <div style="text-align:center">
     <img src="Images/with_post_process.PNG" style="zoom:50%;" />
@@ -106,14 +106,15 @@ Here is a comparison between with and without post-process turning on.
 
 You can clearly see the image with post-process doesn't have many blocky artifacts between the big red jar and black jar while the one without post-process has obvious blocky artifacts in that area.
 
-Here is a gif to show the live demo of turning on regression(bmfr) and not turn on.
-
-![](Images/postprocessing.gif)
-
 ### Modification
 
-The reason why R matrix has rank deficiency is that sometimes the features we use are not linealy independent. For example, when a block of pixels shows the surface of a table, the y coordinates is the same accross the entire block, but we already have a constant feature in the feature set we use. Adding noise will solve this problem, but introduce variance to the result and need extra computation at the same time. A better way is simply ignoring the redundent features. When we doing the House-holder QR factorization, we can tell whether a feature is linearly dependent with other features for free by checking if a feature is already a zero vector before doing the House-holder transformation.        
+The reason why R matrix has rank deficiency is that sometimes the features we use are not linealy independent. For example, when a block of pixels shows the surface of a table, the y coordinates is the same accross the entire block, but we already have a constant feature in the feature set we use. Adding noise will solve this problem, but introduce variance to the result and need extra computation at the same time. A better way is simply ignoring the redundent features. When we doing the House-holder QR factorization, we can tell whether a feature is linearly dependent with other features for free by checking if the feature vector is already a zero vector before doing House-holder transformation on this feature. The framerate increases from 62 fps to 70 fps after this modification. Besides, since no noise is introduced into the image, the quality of regression result is better. Here is a comparison between the reference (left), the result of adding noise (middle), and the result of ignoring linearly dependent features (right).   
 
+<div style="text-align:center">
+    <img src="Images/modification_comparison.png" />
+</div>
+
+You can see the edge of shadow is sharper after the modification. When the post-process stage is turned off, it is also obvious that less block-wise artifact exist after the modification.
 
 ### Result Presentation
 

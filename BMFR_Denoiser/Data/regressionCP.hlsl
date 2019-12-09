@@ -16,6 +16,8 @@ RWTexture2D<float4> gCurNoisy; //current noisy image
 
 groupshared float sum_vec[256];
 groupshared float uVec[1024];
+groupshared float gchannel[1024];
+groupshared float bchannel[1024];
 groupshared float rmat[10][13]; // FEATURES * BUFFER_COUNT
 groupshared float u_length_squared;
 groupshared float dotV;
@@ -465,8 +467,25 @@ void fit(uint3 groupId : SV_GroupID, uint groupThreadId : SV_GroupIndex)
 #endif
 	
     // calculate filtered color
-    for(uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
-        uint index = INBLOCK_ID;
+	for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+		uint index = INBLOCK_ID;
+		uVec[index] = 0.0f;
+		gchannel[index] = 0.0f;
+		bchannel[index] = 0.0f;
+	}
+
+	for (int col = 0; col < FEATURES_COUNT; col++) {
+		for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+			uint index = INBLOCK_ID;
+			float tmp = tmp_data[uint2(index, col + BLOCK_OFFSET)];
+			uVec[index] += rmat[col][FEATURES_COUNT] * tmp;
+			gchannel[index] += rmat[col][FEATURES_COUNT + 1] * tmp;
+			bchannel[index] += rmat[col][FEATURES_COUNT + 2] * tmp;
+		}
+	}
+
+	for (uint sub_vector = 0; sub_vector < BLOCK_PIXELS / LOCAL_SIZE; ++sub_vector) {
+		uint index = INBLOCK_ID;
 		int2 uv = int2(groupId.x % horizental_blocks_count, groupId.x / horizental_blocks_count);
 		uv *= BLOCK_EDGE_LENGTH;
 		uv += int2(index % BLOCK_EDGE_LENGTH, index / BLOCK_EDGE_LENGTH);
@@ -474,25 +493,9 @@ void fit(uint3 groupId : SV_GroupID, uint groupThreadId : SV_GroupIndex)
 		if (uv.x < 0 || uv.y < 0 || uv.x >= screen_width || uv.y >= screen_height) {
 			continue;
 		}
-
-		float rchannal = 0.0f;
-        for(int col = 0; col < FEATURES_COUNT; col++) {
-			rchannal += rmat[col][FEATURES_COUNT] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
-        }
-		rchannal = rchannal < 0.0f ? 0.0f : rchannal;
-
-		float gchannal = 0.0f;
-        for(int col = 0; col < FEATURES_COUNT; col++) {
-			gchannal += rmat[col][FEATURES_COUNT + 1] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
-        }
-		gchannal = gchannal < 0.0f ? 0.0f : gchannal;
-
-		float bchannal = 0.0f;
-        for(int col = 0; col < FEATURES_COUNT; col++) {
-			bchannal += rmat[col][FEATURES_COUNT + 2] * tmp_data[uint2(index, col + BLOCK_OFFSET)];
-        }
-		bchannal = bchannal < 0.0f ? 0.0f : bchannal;
-
-		gCurNoisy[uv] = albedo[uv] * float4(rchannal, gchannal, bchannal, gCurNoisy[uv].w);
-	}
+		gCurNoisy[uv] = albedo[uv] * float4(uVec[index] < 0.0f ? 0.0f : uVec[index], 
+											gchannel[index] < 0.0f ? 0.0f : gchannel[index],
+											bchannel[index] < 0.0f ? 0.0f : bchannel[index],
+											gCurNoisy[uv].w);
+	}				
 }

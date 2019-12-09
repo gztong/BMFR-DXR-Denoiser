@@ -96,11 +96,13 @@ Here is a comparison between with and without post-process turning on.
     <img src="Images/no_post_process.PNG" width="300"/>
     <br> ​Without post-process
     <br>
+    <br>
 </div>
 
 <div align="center">
     <img src="Images/with_post_process.PNG" width="300"/>
     <br> With post-process
+    <br>
     <br>
 </div>															     
 

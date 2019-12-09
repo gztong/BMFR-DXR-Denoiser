@@ -15,7 +15,7 @@
 
 ### Project Goal
 
-In the current game and file industry, **path tracing** is the best candidate for generating photorealistic and
+In the current game and film industry, **path tracing** is the best candidate for generating photorealistic and
 physically correct pictures. However, the performance bottleneck has limited the usage of path tracing in
 **real-time rendering** field. Given our interest in game industry, which concerns interactive/real-time
 rendering, we want to explore the possibility of real-time path tracing using the denoising method
@@ -28,7 +28,7 @@ Path Tracing Reconstruction*](http://www.tut.fi/vga/publications/Blockwise_Multi
     <img src="Images/pipeline_diagram.PNG" />
 </div>
 
-This project is complete **DXR pipeline** that use 1 spp path tracing noisy image and *Blockwise Multi-Order Feature Regression* technique to produce high resolution physically-correct image. There are **four** stages in the pipeline:
+This project is a complete **DXR pipeline** that use 1 spp path tracing noisy image and *Blockwise Multi-Order Feature Regression* technique to produce high resolution physically-correct image. There are **four** stages in the pipeline:
 
 1. A basic path tracer produces 1 spp output image and populates necessary feature buffers(normal and world position) based on the 1 spp image
 2. Temporal accumulation of the noise image
@@ -76,9 +76,9 @@ Generally speaking, more features result to higher quality of filtered image,but
 
  [1, normal_x, normal_y, normal_z, position_x, position_y, position_z, squared_position_x, squared_position_y, squared_position_z]
 
-A [House-holder QR factorization](https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf) is implemented in a compute shader to solve the least-squares problem. After that we calculate the weights by doing a back substitution over the R matrix we get from last step. Sometimes the R matrix is not full-ranked so we can't solve the problem with a unique answer. In the original BMFR paper, a small amount of noise are added to the features to deal with this issue. We also tried another method which gives a better performance in terms of both the speed and the image quality. We will discuss this in later section.
+The [House-holder QR factorization](https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf) is implemented in a compute shader to solve the least-squares problem. After that we calculate the weights by doing a back substitution over the R matrix we get from last step. Sometimes the R matrix is not full-ranked so we can't solve the problem with a unique answer. In the original BMFR paper, a small amount of noise is added to the features to deal with this issue. We also tried another method which gives a better performance in terms of both the speed and the image quality. We will discuss this in later section.
 
-The fiited data may contains block-wise bias resulting from the variance of the input noisy image. The blocks are displaced with a given offset over each frame and then acculumated in the next stage to remove the block-wise artifact.  
+The fiited data may contains block-wise bias resulting from the variance of the input noisy image. The blocks are displaced with a given offset that changes over frames and then the regression results are acculumated in the next stage to remove the block-wise artifact.
 
 Here is a gif to show the live demo of turning on regression(bmfr) and not turn on.
 
@@ -92,16 +92,14 @@ In this step we accumulate the fitted image with the history fitted result. We c
 
 Here is a comparison between with and without post-process turning on.
 
-<div style="text-align:center">
-    <img src="Images/no_post_process.PNG" style="zoom:50%;" />
-    <br>
-    ​Without post-process
+<div align="center">
+    <img src="Images/no_post_process.PNG" width="300"/>
+    <br> ​Without post-process
 </div>
 
-<div style="text-align:center">
-    <img src="Images/with_post_process.PNG" style="zoom:50%;" />
-    <br>
-    With post-process
+<div align="center">
+    <img src="Images/with_post_process.PNG" width="300"/>
+    <br> With post-process
 </div>															     
 
 You can clearly see the image with post-process doesn't have many blocky artifacts between the big red jar and black jar while the one without post-process has obvious blocky artifacts in that area.

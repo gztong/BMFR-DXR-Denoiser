@@ -95,11 +95,13 @@ Here is a comparison between with and without post-process turning on.
 <div align="center">
     <img src="Images/no_post_process.PNG" width="300"/>
     <br> ​Without post-process
+    <br>
 </div>
 
 <div align="center">
     <img src="Images/with_post_process.PNG" width="300"/>
     <br> With post-process
+    <br>
 </div>															     
 
 You can clearly see the image with post-process doesn't have many blocky artifacts between the big red jar and black jar while the one without post-process has obvious blocky artifacts in that area.

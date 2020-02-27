@@ -22,6 +22,23 @@ rendering, we want to explore the possibility of real-time path tracing using th
 introduced recently in *SIGGRAPH 2019:* [*Blockwise Multi-Order Feature Regression for Real-Time
 Path Tracing Reconstruction*](http://www.tut.fi/vga/publications/Blockwise_Multi-Order_Feature_Regression_for_Real-Time_Path_Tracing_Reconstruction.html) . We also know that the current **Direct3D 12** and **DirectX Ray Tracing(DXR)** are the latest API to render picture using ray-tracing technique. Hence, we want to build up a thorough pipeline in D12 to not only generate 1spp noisy input picture, but also denoise the input picture with feature buffer through the D12 computing shaders, and then generate the high quality processed-picture, recording the performance of that.
 
+
+
+### How to Build and Run
+
+**Note:** 
+
+- Please use the following Windows SDK for building Folcor 3.1, otherwise you might encounter errors
+  - [Microsoft Windows SDK version 1809 (10.0.17763.0)](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
+
+1. Clone this repository
+
+2. Go into **Falcor** Folder and run [update_dependencies.bat](https://github.com/gztong/BMFR-DXR-Denoiser/blob/master/Falcor/update_dependencies.bat)
+4. Open BMFR_Denoiser_Pipeline.sln
+5. Build + Start in Release Mode
+
+----------------------------------------------------------------------------------------------
+
 ### Overview:
 
 <div style="text-align:center">
@@ -71,7 +88,7 @@ In the regression step we fit the noisy data using the features generated from p
 ![](Images/formula.PNG)
 
 where alpha is the weights we are trying to find, Z is the noisy input, F_m^(gamma_m) is the m-th feature with an order of gamma_m, c denotes the channel (RGB) we are computing, p and q are the pixel coordinates in the current block omega_(i,j). 
- 
+
 Generally speaking, more features result to higher quality of filtered image,but will require more computation. Given the trade off between speed and quality, the following set of features are used in the pipeline,
 
  [1, normal_x, normal_y, normal_z, position_x, position_y, position_z, squared_position_x, squared_position_y, squared_position_z]
@@ -160,16 +177,6 @@ Although the regression stage takes the majority of time, we are still able to a
 
 
 
-### How to Build and Run
-
-1. Clone
-
-2. Go into **Falcor** Folder 
-3. run [update_dependencies.bat](https://github.com/gztong/BMFR-DXR-Denoiser/blob/master/Falcor/update_dependencies.bat)
-4. Open BMFR_Denoiser_Pipeline.sln
-5. Build + Start in Release Mode
-
-----------------------------------------------------------------------------------------------
 Acknowledgments:
 ----------------------------------------------------------------------------------------------
 
